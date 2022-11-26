@@ -10,6 +10,7 @@ from requests.auth import AuthBase, HTTPBasicAuth
 from requests_oauthlib import OAuth2Session, TokenUpdated
 from flask import Flask, request, redirect, session, url_for, render_template
 from dotenv import dotenv_values
+import random
 
 config = dotenv_values('.env')
 
@@ -44,11 +45,12 @@ code_challenge = code_challenge.replace("=", "")
 def make_token():
     return OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scopes)
 
-# Since your bot will Tweet random facts about cats, you will need to get these from somewhere. There is a cat fact API that you can call to get facts to Tweet. The function parse_cat_fact allows you to make a GET request to the cat fact endpoint and format the JSON response to get a fact you can later Tweet.
-def parse_cat_fact():
-    url = "https://catfact.ninja/fact"
-    cat_fact = requests.request("GET", url).json()
-    return cat_fact["fact"]
+# Since your bot will Tweet random facts about cats, you will need to get these from somewhere. There is a cat fact API that you can call to get facts to Tweet. The function parse_fav_quote allows you to make a GET request to the cat fact endpoint and format the JSON response to get a fact you can later Tweet.
+def parse_fav_quote():
+    url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
+    fav_quote = requests.request("GET", url).json()
+    quote = random.randint(0, len(fav_quote["quotes"]))
+    return fav_quote["quotes"][quote]
 
 # To Tweet the cat fact, you can make a function that will indicate it is Tweeting which helps debug and makes a POST request to the Manage Tweets endpoint.
 def post_tweet(payload, token):
@@ -77,7 +79,7 @@ def demo():
 
 # After the account gives permission to your App you can get the access token. You can format your token to save it as a JSON object into a Redis key/value store so that you can refresh the token the next time your bot Tweets. 
 
-# After you save the token, you can parse the cat fact using the function parse_cat_fact. You will also need to format the cat_fact  into a JSON object. After, you can pass the payload in as a payload into your post_tweet.
+# After you save the token, you can parse the cat fact using the function parse_fav_quote. You will also need to format the fav_quote  into a JSON object. After, you can pass the payload in as a payload into your post_tweet.
 @app.route("/oauth/callback", methods=["GET"])
 def callback():
     code = request.args.get("code")
@@ -90,7 +92,7 @@ def callback():
     st_token = '"{}"'.format(token)
     j_token = json.loads(st_token)
     r.set("token", j_token)
-    cat_fact = parse_cat_fact()
-    payload = {"text": "{}".format(cat_fact)}
+    fav_quote = parse_fav_quote()
+    payload = {"text": "{}".format(fav_quote)}
     response = post_tweet(payload, token).json()
     return response
