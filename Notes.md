@@ -1,6 +1,9 @@
 # Notes
 - [ ] Need to OAuth2Session.refresh_token (in debug.ipynb)
 - . ./export_env.sh to update your env
+  
+# To Do
+- [ ] deploy to docker container; deploy to cloud
 
 # References
 - https://developer.twitter.com/en/docs/authentication/api-reference
