@@ -12,7 +12,7 @@ from flask import Flask, request, redirect, session, url_for, render_template
 from dotenv import dotenv_values
 import random
 
-config = dotenv_values('.env')
+config = dotenv_values('./config/.env')
 
 # Since you will be using Redis as your database, you will need to get the environment variable from the previous step and save it into a variable named r that can be called whenever we need to access the database. Using an environment variable allows us to be flexible because you will use an internal connection string when you deploy your bot.
 r = redis.from_url(config["REDIS_URL"])

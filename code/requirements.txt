@@ -1,0 +1,5 @@
+requests 
+redis 
+requests_oauthlib 
+flask 
+python-dotenv

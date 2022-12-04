@@ -1,0 +1,14 @@
+version: '1'
+services:
+    web:
+        env_file:
+            - ./config/.env
+        build: .
+        ports:
+            - "5000:5000"
+        volumes:
+            - .:/code
+        depends_on:
+            - redis
+    redis:
+        image: redis

@@ -1,1 +1,0 @@
-pip install requests redis requests_oauthlib flask python-dotenv
