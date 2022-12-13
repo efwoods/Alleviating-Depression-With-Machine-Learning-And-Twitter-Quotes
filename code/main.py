@@ -11,9 +11,8 @@ from requests_oauthlib import OAuth2Session, TokenUpdated
 from flask import Flask, request, redirect, session, url_for, render_template
 from dotenv import dotenv_values
 import random
-import pandas as pd
 import configparser
-import tweepy
+# import tweepy
 
 config = dotenv_values('./config/.env')
 
@@ -81,11 +80,11 @@ def authenticate_tweepy():
     access_token_secret = config['twitter']['access_token_secret']
 
     # authenticate
-    auth = tweepy.OAuthHandler(api_key, api_key_secret)
-    auth.set_access_token(access_token, access_token_secret)
+    # auth = tweepy.OAuthHandler(api_key, api_key_secret)
+    # auth.set_access_token(access_token, access_token_secret)
 
-    api = tweepy.API(auth)
-    return api
+    # api = tweepy.API(auth)
+    # return api
     
 def get_prior_tweets(api):
     user = api.search_full_archive(screen_name="EvanWoods")
@@ -120,11 +119,12 @@ def callback():
     st_token = '"{}"'.format(token)
     j_token = json.loads(st_token)
     r.set("token", j_token)
-    tweets = get_prior_tweets(authenticate_tweepy())
+    
     fav_quote = parse_fav_quote()
+    # tweets = get_prior_tweets(authenticate_tweepy())
     # while fav_quote in tweets:
     #     fav_quote = parse_fav_quote()
     # else:
-    #     payload = {"text": "{}".format(fav_quote)}
+    payload = {"text": "{}".format(fav_quote)}
     response = post_tweet(payload, token).json()
     return response
