@@ -1,3 +1,4 @@
 ./config/.env
 ./config/config.ini
 .DS_Store
+code/modules/.DS_Store
