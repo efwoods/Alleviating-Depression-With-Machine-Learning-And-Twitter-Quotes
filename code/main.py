@@ -129,6 +129,7 @@ def callback():
     return response
 
 # Algorithm for detecting depression and presenting virtual hug memes or kind words
+# maybe search in #dark or #depressed
 # tweet = getTweet()
 # depressedHuman = detectDepression(tweet)
 # if depressedHuman:
