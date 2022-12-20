@@ -103,7 +103,6 @@ def demo():
     session["oauth_state"] = state
     return redirect(authorization_url)
 
-
 # After the account gives permission to your App you can get the access token. You can format your token to save it as a JSON object into a Redis key/value store so that you can refresh the token the next time your bot Tweets. 
 
 # After you save the token, you can parse the cat fact using the function parse_fav_quote. You will also need to format the fav_quote  into a JSON object. After, you can pass the payload in as a payload into your post_tweet.
@@ -128,3 +127,10 @@ def callback():
     payload = {"text": "{}".format(fav_quote)}
     response = post_tweet(payload, token).json()
     return response
+
+# Algorithm for detecting depression and presenting virtual hug memes or kind words
+# tweet = getTweet()
+# depressedHuman = detectDepression(tweet)
+# if depressedHuman:
+#   love = generateLove()
+#   postMedicine(love)
