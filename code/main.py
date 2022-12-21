@@ -12,7 +12,6 @@ from flask import Flask, request, redirect, session, url_for, render_template
 from dotenv import dotenv_values
 import random
 import configparser
-# import tweepy
 
 config = dotenv_values('./config/.env')
 
@@ -68,29 +67,32 @@ def post_tweet(payload, token):
         },
     )
 
-def authenticate_tweepy():
+'''def authenticate_tweepy():
     # read config
-    config = configparser.ConfigParser()
-    config.read('./code/config/config.ini')
 
-    api_key = config['twitter']['api_key']
-    api_key_secret = config['twitter']['api_key_secret']
+    api_key = config["API_KEY"]
+    api_key_secret = config['API_KEY_SECRET']
 
-    access_token = config['twitter']['access_token']
-    access_token_secret = config['twitter']['access_token_secret']
+    access_token = config['ACCESS_TOKEN']
+    access_token_secret = config['ACCESS_TOKEN_SECRET']
 
     # authenticate
-    # auth = tweepy.OAuthHandler(api_key, api_key_secret)
-    # auth.set_access_token(access_token, access_token_secret)
+    auth = tweepy.OAuthHandler(api_key, api_key_secret)
+    auth.set_access_token(access_token, access_token_secret)
 
-    # api = tweepy.API(auth)
-    # return api
+    api = tweepy.API(auth)
+    return api'''
     
-def get_prior_tweets(api):
-    user = api.search_full_archive(screen_name="EvanWoods")
-    new_tweets = api.user_timeline(screen_name = user.screen_name,count=200, tweet_mode="extended")
-    tweets = [[tweet.full_text] for tweet in new_tweets]
-    return tweets
+def get_prior_tweets():
+    url = "https://api.twitter.com/2/users/1537504318496047106/tweets?max_results=200"
+    prev_quotes = requests.request("GET", url).json()
+    return prev_quotes
+   # search_url = "https://api.twitter.com/2/tweets/search/recent"
+
+# Optional params: start_time,end_time,since_id,until_id,max_results,next_token,
+# expansions,tweet.fields,media.fields,poll.fields,place.fields,user.fields
+#query_params = {'query': '#depressed','tweet.fields': 'author_id'}
+
 
 # At this point, you’ll want to set up the landing page for your bot to authenticate. Your bot will log into a page that lists the permissions needed.
 @app.route("/")
@@ -126,12 +128,7 @@ def callback():
     # else:
     payload = {"text": "{}".format(fav_quote)}
     response = post_tweet(payload, token).json()
+    # response = get_prior_tweets()
     return response
 
-# Algorithm for detecting depression and presenting virtual hug memes or kind words
-# maybe search in #dark or #depressed
-# tweet = getTweet()
-# depressedHuman = detectDepression(tweet)
-# if depressedHuman:
-#   love = generateLove()
-#   postMedicine(love)
+
