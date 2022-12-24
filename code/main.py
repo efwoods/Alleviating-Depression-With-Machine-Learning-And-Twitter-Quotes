@@ -126,9 +126,6 @@ def callback():
     while fav_quote in tweets:
         fav_quote = parse_fav_quote()
     payload = {"text": "{}".format(fav_quote)}
-    # response = post_tweet(payload, token).json()
-    return payload
-    # response = get_prior_tweets()
-    # return response
-
+    response = post_tweet(payload, token).json()
+    return response
 
