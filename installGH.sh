@@ -7,3 +7,11 @@ curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo 
 
 sudo apt update
 sudo apt install gh
+
+
+# update github email for push
+# git config --global user.email "YOUR_EMAIL"
+# 22337004+efwoods@users.noreply.github.com
+
+# reset email for config
+# git commit --amend --reset-author
