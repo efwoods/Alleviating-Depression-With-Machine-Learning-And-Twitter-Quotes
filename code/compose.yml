@@ -1,6 +1,7 @@
 version: '1'
 services:
     web:
+        image: evdev3/tweet-daily-quote
         env_file:
             - ./config/.env
         build: .
