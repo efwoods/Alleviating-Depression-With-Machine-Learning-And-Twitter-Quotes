@@ -84,7 +84,7 @@ def post_tweet(payload, token):
     return api'''
     
 def get_prior_tweets():
-    url = "https://api.twitter.com/2/users/1537504318496047106/tweets?max_results=200"
+    url = "https://api.twitter.com/2/users/1537504318496047106/tweets?max_results=100"
     prev_quotes = requests.request("GET", url).json()
     return prev_quotes
    # search_url = "https://api.twitter.com/2/tweets/search/recent"
@@ -122,13 +122,13 @@ def callback():
     r.set("token", j_token)
     
     fav_quote = parse_fav_quote()
-    # tweets = get_prior_tweets(authenticate_tweepy())
-    # while fav_quote in tweets:
-    #     fav_quote = parse_fav_quote()
-    # else:
+    tweets = get_prior_tweets()
+    while fav_quote in tweets:
+        fav_quote = parse_fav_quote()
     payload = {"text": "{}".format(fav_quote)}
-    response = post_tweet(payload, token).json()
+    # response = post_tweet(payload, token).json()
+    return payload
     # response = get_prior_tweets()
-    return response
+    # return response
 
 
