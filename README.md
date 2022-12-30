@@ -7,3 +7,4 @@
 
 # EvanWoodsTwitter
  Evan Woods Twitter Bot
+## [My Favorite Quotes](https://fast-api-container.6p4po3ctm1a18.us-east-1.cs.amazonlightsail.com/quotes)
