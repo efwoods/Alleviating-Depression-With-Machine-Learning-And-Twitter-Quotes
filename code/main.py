@@ -23,6 +23,8 @@ nltk.download('omw-1.4')
   
 from nltk.stem import WordNetLemmatizer
 
+# Configuration
+
 config = dotenv_values('./config/.env')
 
 
@@ -53,92 +55,7 @@ code_challenge = base64.urlsafe_b64encode(code_challenge).decode("utf-8")
 code_challenge = code_challenge.replace("=", "")
 
 
-# To connect to manage Tweets endpoint, you’ll need an access token. To create this access token, you can create a function called make_token which will pass in the needed parameters and return a token.
-def make_token():
-    return OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scopes)
-
-# Since your bot will Tweet random facts about cats, you will need to get these from somewhere. There is a cat fact API that you can call to get facts to Tweet. The function parse_fav_quote allows you to make a GET request to the cat fact endpoint and format the JSON response to get a fact you can later Tweet.
-def parse_fav_quote():
-    url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
-    fav_quote = requests.request("GET", url).json()
-    quote = random.randint(0, len(fav_quote["quotes"]))
-    return fav_quote["quotes"][quote]
-
-# To Tweet the cat fact, you can make a function that will indicate it is Tweeting which helps debug and makes a POST request to the Manage Tweets endpoint.
-def post_tweet(payload, token):
-    print("Tweeting!")
-    return requests.request(
-        "POST",
-        "https://api.twitter.com/2/tweets",
-        json=payload,
-        headers={
-            "Authorization": "Bearer {}".format(token["access_token"]),
-            "Content-Type": "application/json",
-        },
-    )
-
-'''def authenticate_tweepy():
-    # read config
-
-    api_key = config["API_KEY"]
-    api_key_secret = config['API_KEY_SECRET']
-
-    access_token = config['ACCESS_TOKEN']
-    access_token_secret = config['ACCESS_TOKEN_SECRET']
-
-    # authenticate
-    auth = tweepy.OAuthHandler(api_key, api_key_secret)
-    auth.set_access_token(access_token, access_token_secret)
-
-    api = tweepy.API(auth)
-    return api'''
-    
-def get_prior_tweets():
-    url = "https://api.twitter.com/2/users/1537504318496047106/tweets?max_results=100"
-    prev_quotes = requests.request("GET", url).json()
-    return prev_quotes
-   # search_url = "https://api.twitter.com/2/tweets/search/recent"
-
-# Optional params: start_time,end_time,since_id,until_id,max_results,next_token,
-# expansions,tweet.fields,media.fields,poll.fields,place.fields,user.fields
-#query_params = {'query': '#depressed','tweet.fields': 'author_id'}
-
-
-# At this point, you’ll want to set up the landing page for your bot to authenticate. Your bot will log into a page that lists the permissions needed.
-@app.route("/login")
-def demo():
-    global twitter
-    twitter = make_token()
-    authorization_url, state = twitter.authorization_url(
-        auth_url, code_challenge=code_challenge, code_challenge_method="S256"
-    )
-    session["oauth_state"] = state
-    return redirect(authorization_url)
-
-# After the account gives permission to your App you can get the access token. You can format your token to save it as a JSON object into a Redis key/value store so that you can refresh the token the next time your bot Tweets. 
-
-# After you save the token, you can parse the cat fact using the function parse_fav_quote. You will also need to format the fav_quote  into a JSON object. After, you can pass the payload in as a payload into your post_tweet.
-@app.route("/oauth/callback", methods=["GET"])
-def callback():
-    code = request.args.get("code")
-    token = twitter.fetch_token(
-        token_url=token_url,
-        client_secret=client_secret,
-        code_verifier=code_verifier,
-        code=code,
-    )
-    st_token = '"{}"'.format(token)
-    j_token = json.loads(st_token)
-    r.set("token", j_token)
-    
-    fav_quote = parse_fav_quote()
-    tweets = get_prior_tweets()
-    while fav_quote in tweets:
-        fav_quote = parse_fav_quote()
-    payload = {"text": "{}".format(fav_quote)}
-    response = post_tweet(payload, token).json()
-    return response
-
+# Methods
 def load_models():
     '''
     Replace '..path/' by the path of the saved models.
@@ -211,6 +128,81 @@ def predict(vectoriser, model, text):
     df = df.replace([0,1], ["Negative","Positive"])
     return df
 
+# To connect to manage Tweets endpoint, you’ll need an access token. To create this access token, you can create a function called make_token which will pass in the needed parameters and return a token.
+def make_token():
+    return OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scopes)
+
+# Since your bot will Tweet random facts about cats, you will need to get these from somewhere. There is a cat fact API that you can call to get facts to Tweet. The function parse_fav_quote allows you to make a GET request to the cat fact endpoint and format the JSON response to get a fact you can later Tweet.
+def parse_fav_quote():
+    url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
+    fav_quote = requests.request("GET", url).json()
+    quote = random.randint(0, len(fav_quote["quotes"]))
+    return fav_quote["quotes"][quote]
+
+# To Tweet the cat fact, you can make a function that will indicate it is Tweeting which helps debug and makes a POST request to the Manage Tweets endpoint.
+def post_tweet(payload, token):
+    print("Tweeting!")
+    return requests.request(
+        "POST",
+        "https://api.twitter.com/2/tweets",
+        json=payload,
+        headers={
+            "Authorization": "Bearer {}".format(token["access_token"]),
+            "Content-Type": "application/json",
+        },
+    )
+
+    
+def get_prior_tweets():
+    url = "https://api.twitter.com/2/users/1537504318496047106/tweets?max_results=100"
+    prev_quotes = requests.request("GET", url).json()
+    return prev_quotes
+   # search_url = "https://api.twitter.com/2/tweets/search/recent"
+
+# Optional params: start_time,end_time,since_id,until_id,max_results,next_token,
+# expansions,tweet.fields,media.fields,poll.fields,place.fields,user.fields
+#query_params = {'query': '#depressed','tweet.fields': 'author_id'}
+
+
+# Routes
+
+# At this point, you’ll want to set up the landing page for your bot to authenticate. Your bot will log into a page that lists the permissions needed.
+@app.route("/login")
+def demo():
+    global twitter
+    twitter = make_token()
+    authorization_url, state = twitter.authorization_url(
+        auth_url, code_challenge=code_challenge, code_challenge_method="S256"
+    )
+    session["oauth_state"] = state
+    return redirect(authorization_url)
+
+# After the account gives permission to your App you can get the access token. You can format your token to save it as a JSON object into a Redis key/value store so that you can refresh the token the next time your bot Tweets. 
+
+# After you save the token, you can parse the cat fact using the function parse_fav_quote. You will also need to format the fav_quote  into a JSON object. After, you can pass the payload in as a payload into your post_tweet.
+@app.route("/oauth/callback", methods=["GET"])
+def callback():
+    code = request.args.get("code")
+    token = twitter.fetch_token(
+        token_url=token_url,
+        client_secret=client_secret,
+        code_verifier=code_verifier,
+        code=code,
+    )
+    st_token = '"{}"'.format(token)
+    j_token = json.loads(st_token)
+    r.set("token", j_token)
+    
+    fav_quote = parse_fav_quote()
+    tweets = get_prior_tweets()
+    while fav_quote in tweets:
+        fav_quote = parse_fav_quote()
+    payload = {"text": "{}".format(fav_quote)}
+    response = post_tweet(payload, token).json()
+    return response
+
+
+
 @app.route("/", methods=["GET"])
 def main():
     # Loading the models.
@@ -228,7 +220,7 @@ def main():
     return df.to_json()
     
     
-    # Defining dictionary containing all emojis with their meanings.
+# Defining dictionary containing all emojis with their meanings.
 emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
           ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
           ':-@': 'shocked', ':@': 'shocked',':-$': 'confused', ':\\': 'annoyed', 
