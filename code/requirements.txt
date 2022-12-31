@@ -5,4 +5,4 @@ flask
 python-dotenv
 pandas
 nltk
-sklearn
+scikit-learn
