@@ -54,6 +54,32 @@ code_challenge = hashlib.sha256(code_verifier.encode("utf-8")).digest()
 code_challenge = base64.urlsafe_b64encode(code_challenge).decode("utf-8")
 code_challenge = code_challenge.replace("=", "")
 
+# Defining dictionary containing all emojis with their meanings.
+emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
+          ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
+          ':-@': 'shocked', ':@': 'shocked',':-$': 'confused', ':\\': 'annoyed', 
+          ':#': 'mute', ':X': 'mute', ':^)': 'smile', ':-&': 'confused', '$_$': 'greedy',
+          '@@': 'eyeroll', ':-!': 'confused', ':-D': 'smile', ':-0': 'yell', 'O.o': 'confused',
+          '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
+          ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
+
+## Defining set containing all stopwords in english.
+stopwordlist = ['a', 'about', 'above', 'after', 'again', 'ain', 'all', 'am', 'an',
+             'and','any','are', 'as', 'at', 'be', 'because', 'been', 'before',
+             'being', 'below', 'between','both', 'by', 'can', 'd', 'did', 'do',
+             'does', 'doing', 'down', 'during', 'each','few', 'for', 'from', 
+             'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here',
+             'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in',
+             'into','is', 'it', 'its', 'itself', 'just', 'll', 'm', 'ma',
+             'me', 'more', 'most','my', 'myself', 'now', 'o', 'of', 'on', 'once',
+             'only', 'or', 'other', 'our', 'ours','ourselves', 'out', 'own', 're',
+             's', 'same', 'she', "shes", 'should', "shouldve",'so', 'some', 'such',
+             't', 'than', 'that', "thatll", 'the', 'their', 'theirs', 'them',
+             'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 
+             'through', 'to', 'too','under', 'until', 'up', 've', 'very', 'was',
+             'we', 'were', 'what', 'when', 'where','which','while', 'who', 'whom',
+             'why', 'will', 'with', 'won', 'y', 'you', "youd","youll", "youre",
+             "youve", 'your', 'yours', 'yourself', 'yourselves']
 
 # Methods
 def load_models():
@@ -163,6 +189,10 @@ def get_prior_tweets():
 # expansions,tweet.fields,media.fields,poll.fields,place.fields,user.fields
 #query_params = {'query': '#depressed','tweet.fields': 'author_id'}
 
+def get_depressed_tweets():
+    url = "https://api.twitter.com/2/tweets/search/recent?query=%23depressed"
+    depressed_tweets = requests.request("GET", url).json()
+    return depressed_tweets
 
 # Routes
 
@@ -218,34 +248,6 @@ def main():
     df = predict(vectoriser, LRmodel, text)
     print(df.to_json())
     return df.to_json()
-    
-    
-# Defining dictionary containing all emojis with their meanings.
-emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
-          ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
-          ':-@': 'shocked', ':@': 'shocked',':-$': 'confused', ':\\': 'annoyed', 
-          ':#': 'mute', ':X': 'mute', ':^)': 'smile', ':-&': 'confused', '$_$': 'greedy',
-          '@@': 'eyeroll', ':-!': 'confused', ':-D': 'smile', ':-0': 'yell', 'O.o': 'confused',
-          '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
-          ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
-
-## Defining set containing all stopwords in english.
-stopwordlist = ['a', 'about', 'above', 'after', 'again', 'ain', 'all', 'am', 'an',
-             'and','any','are', 'as', 'at', 'be', 'because', 'been', 'before',
-             'being', 'below', 'between','both', 'by', 'can', 'd', 'did', 'do',
-             'does', 'doing', 'down', 'during', 'each','few', 'for', 'from', 
-             'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here',
-             'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in',
-             'into','is', 'it', 'its', 'itself', 'just', 'll', 'm', 'ma',
-             'me', 'more', 'most','my', 'myself', 'now', 'o', 'of', 'on', 'once',
-             'only', 'or', 'other', 'our', 'ours','ourselves', 'out', 'own', 're',
-             's', 'same', 'she', "shes", 'should', "shouldve",'so', 'some', 'such',
-             't', 'than', 'that', "thatll", 'the', 'their', 'theirs', 'them',
-             'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 
-             'through', 'to', 'too','under', 'until', 'up', 've', 'very', 'was',
-             'we', 'were', 'what', 'when', 'where','which','while', 'who', 'whom',
-             'why', 'will', 'with', 'won', 'y', 'you', "youd","youll", "youre",
-             "youve", 'your', 'yours', 'yourself', 'yourselves']
 
 if __name__ == "__main__":
    app.run(host='0.0.0.0', port=5000)
