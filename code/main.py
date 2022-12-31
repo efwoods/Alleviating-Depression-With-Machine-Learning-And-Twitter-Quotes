@@ -24,7 +24,6 @@ nltk.download('omw-1.4')
 from nltk.stem import WordNetLemmatizer
 
 # Configuration
-
 config = dotenv_values('./config/.env')
 
 
@@ -232,6 +231,11 @@ def callback():
     return response
 
 
+@app.route("/depressed", methods=["GET"])
+def get_depressed_tweets():
+    url = "https://api.twitter.com/2/tweets/search/recent?query=%23depressed"
+    depressed_tweets = requests.request("GET", url).json()
+    return depressed_tweets
 
 @app.route("/", methods=["GET"])
 def main():
