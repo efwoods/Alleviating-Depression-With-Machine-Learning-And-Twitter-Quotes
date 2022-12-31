@@ -1,5 +1,5 @@
 # build image 
-# docker buildx build --platform=linux/amd64 -t flask-container .
+# docker buildx build --platform=linux/amd64 -t evdev3/evanwoodstwitter .
 
 # Create Container service
 # aws lightsail create-container-service --service-name flask-service --power small --scale 1
