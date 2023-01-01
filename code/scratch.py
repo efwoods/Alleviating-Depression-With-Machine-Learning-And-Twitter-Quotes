@@ -41,6 +41,15 @@ text_l = []
 for text in df["text"]:
     text_l.append(text)
 
+query = '#depressed'
+tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=100)
+
+df = pd.DataFrame(tweets.data, columns=["id","text"])
+
+text_l = []
+for text in df["text"]:
+    text_l.append(text)
+    
 testdf = predict(vectoriser, LRmodel, text_l)
 for text in range(0,testdf["text"].size):
     tweetid = str(df["id"][text])
