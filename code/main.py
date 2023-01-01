@@ -15,6 +15,7 @@ import configparser
 import pickle
 import pandas as pd
 import sklearn
+import tweepy
 
 # nltk
 import nltk
@@ -40,6 +41,7 @@ client_secret = config["CLIENT_SECRET"]
 auth_url = "https://twitter.com/i/oauth2/authorize"
 token_url = "https://api.twitter.com/2/oauth2/token"
 redirect_uri = config["REDIRECT_URI"]
+bearer_token = config["BEARER_TOKEN"]
 
 # Now we can set the permissions you need for your bot by defining scopes. You can use the authentication mapping guide to determine what scopes you need based on your endpoints. 
 scopes = ["tweet.read", "users.read", "tweet.write", "offline.access"]
@@ -52,6 +54,9 @@ code_verifier = re.sub("[^a-zA-Z0-9]+", "", code_verifier)
 code_challenge = hashlib.sha256(code_verifier.encode("utf-8")).digest()
 code_challenge = base64.urlsafe_b64encode(code_challenge).decode("utf-8")
 code_challenge = code_challenge.replace("=", "")
+
+# tweepy.Client
+client = tweepy.Client(bearer_token=bearer_token)
 
 # Defining dictionary containing all emojis with their meanings.
 emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
@@ -229,16 +234,31 @@ def callback():
     payload = {"text": "{}".format(fav_quote)}
     response = post_tweet(payload, token).json()
     return response
+    # return get_depressed_tweets()
 
 
 @app.route("/depressed", methods=["GET"])
 def get_depressed_tweets():
-    url = "https://api.twitter.com/2/tweets/search/recent?query=%23depressed"
-    depressed_tweets = requests.request("GET", url).json()
-    return depressed_tweets
+    # Replace with your own search query
+    query = '#depressed'
+
+    tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=10)
+    df = pd.DataFrame(tweets.data, columns=["text"])
+    for tweet in tweets.data:
+        print(tweet.text)
+        if len(tweet.context_annotations) > 0:
+            print(tweet.context_annotations)
+    print(tweets.data)
+    return  df.to_json()
+    # url = "https://api.twitter.com/2/tweets/search/recent?query=%23depressed"
+    # headers = {'Content-Type':'application/json',
+    #            'Authorization': 'Bearer {}'.format(bearer_token)}
+    # depressed_tweets = requests.get(url, headers).json()
+    # return depressed_tweets
 
 @app.route("/", methods=["GET"])
 def main():
+
     # Loading the models.
     vectoriser, LRmodel = load_models()
     
@@ -255,3 +275,8 @@ def main():
 
 if __name__ == "__main__":
    app.run(host='0.0.0.0', port=5000)
+   
+   
+# scratch
+# for text in df.text:
+#     print(df.id[df.text==text])
