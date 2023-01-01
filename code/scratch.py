@@ -54,4 +54,7 @@ for text in range(0,testdf["text"].size):
             f = open('hugs_given.txt','a')
             f.write(tweetid + "\n")
             f.close()
-            api.update_status(status = '*gives hug*', in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
+            try:
+                api.update_status(status = '*gives hug*', in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
+            except Exception:
+                pass
