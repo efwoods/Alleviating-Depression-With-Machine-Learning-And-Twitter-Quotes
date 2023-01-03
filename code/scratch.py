@@ -33,8 +33,8 @@ tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'cr
 df = pd.DataFrame(tweets.data, columns=["id","text"])
 
 
-auth = tweepy.OAuthHandler(API_KEY, API_KEY_SECRET)
-auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+auth = tweepy.OAuthHandler(config["API_KEY"], config["API_KEY_SECRET"])
+auth.set_access_token(config["ACCESS_TOKEN"], config["ACCESS_TOKEN_SECRET"])
 api = tweepy.API(auth)
 
 text_l = []
@@ -52,6 +52,10 @@ text_l = []
 for text in df["text"]:
     text_l.append(text)
     
+# Loading the models.
+vectoriser, LRmodel = load_models()
+    
+
 testdf = predict(vectoriser, LRmodel, text_l)
 for text in range(0,testdf["text"].size):
     tweetid = str(df["id"][text])
