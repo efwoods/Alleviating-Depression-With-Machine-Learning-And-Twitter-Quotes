@@ -217,6 +217,6 @@ for text in range(0,testdf["text"].size):
             f.write(tweetid + "\n")
             f.close()
             try:
-                api.update_status(status = '*gives hug* Everyone has something to give. Find what you love most, grow towards mastery in what you love, and share it with the world.', in_reply_to_status_id = tweetid , ßauto_populate_reply_metadata=True)
+                api.update_status(status = '*gives hug* Everyone has something to give. Find what you love most, grow towards mastery in what you love, and share it with the world.', in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
             except Exception:
                 pass
