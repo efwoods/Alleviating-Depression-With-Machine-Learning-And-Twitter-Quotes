@@ -191,8 +191,10 @@ client = tweepy.Client(bearer_token=bearer_token)
 vectoriser, LRmodel = load_models()
 
 # Query
+num_of_people_to_hug = 10
+
 query = '#depressed'
-tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=100)
+tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=num_of_people_to_hug)
 
 df = pd.DataFrame(tweets.data, columns=["id","text"])
 
