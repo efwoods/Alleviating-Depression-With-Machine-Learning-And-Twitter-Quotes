@@ -10,7 +10,7 @@ from pdf2image.exceptions import (
     PDFPageCountError,
     PDFSyntaxError,
 )
-from utils import classify_image, classify_pdf
+from utils import classify_image, classify_pdf, parse_fav_quote
 
 app = FastAPI(
     title="Document Classifier API",
@@ -57,3 +57,10 @@ async def get_image(file: UploadFile = File(...)):
     except ValueError as e:
         e = "Error! Please upload a valid image type."
         return e
+
+@app.get("/test", response_class=PlainTextResponse, tags=["home"])
+async def home():
+    note = """
+    this works 
+    """
+    return note

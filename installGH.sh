@@ -10,8 +10,7 @@ sudo apt install gh
 
 
 # update github email for push
-# git config --global user.email "YOUR_EMAIL"
-# 22337004+efwoods@users.noreply.github.com
+# git config --global user.email "22337004+efwoods@users.noreply.github.com"
 
 # reset email for config
 # git commit --amend --reset-author

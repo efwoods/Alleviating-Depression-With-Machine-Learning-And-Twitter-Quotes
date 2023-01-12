@@ -3,3 +3,7 @@ redis
 requests_oauthlib 
 flask 
 python-dotenv
+pandas
+nltk
+scikit-learn
+tweepy
