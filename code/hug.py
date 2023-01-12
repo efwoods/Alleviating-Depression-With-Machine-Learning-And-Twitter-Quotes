@@ -210,14 +210,19 @@ def get_depressed_tweets():
     depressed_tweets = requests.request("GET", url).json()
     return depressed_tweets
 
-def recommendQuote():
-    url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
-    fav_quote = requests.request("GET", url).json()
-    quotes = pd.Series(fav_quote["quotes"])
+def recommendQuotedResponse(quotesMasterDB, depressedTweet):
+    quotesTEMP = quotesMasterDB.copy(deep=True)
+    quotesTEMP.loc[-1] = depressedTweet
+    quotesTEMP.index += 1
+    quotesTEMP = quotesTEMP.sort_index()
     # Create the TfidfVectorizer
     tfidf = TfidfVectorizer(tokenizer = tokenize)
-    review_tfidf = tfidf.fit_transform(quotes.values).toarray()
-    similar_quote = cosine_similarity(review_tfidf, review_tfidf)
+    quotes_tfidf = tfidf.fit_transform(quotesTEMP.values).toarray()
+    similar_quote = cosine_similarity(quotes_tfidf, quotes_tfidf)
+    idx = 0
+    quote_series = pd.Series(similar_quote[idx]).sort_values(ascending = False)
+    top_10_indexes = list(quote_series.iloc[1 : 11].index)
+    return quotesTEMP.loc[top_10_indexes[0]]
     
 # Configuration
 config = dotenv_values('./config/.env')
@@ -229,6 +234,10 @@ client = tweepy.Client(bearer_token=bearer_token)
 
 # Loading the models.
 vectoriser, LRmodel = load_models()
+
+quotes_url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
+quotesDB = requests.request("GET", quotes_url).json()
+quotesMasterDB = pd.Series(quotesDB["quotes"])
 
 # Query
 
@@ -255,6 +264,8 @@ for text in range(0,testdf["text"].size):
             f.write(tweetid + "\n")
             f.close()
             try:
-                api.update_status(status = '*gives hug* Everyone has something to give. Find what you love most, grow towards mastery in what you love, and share it with the world.', in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
+                recommendation = recommendQuotedResponse(quotesMasterDB, df["text"][text])
+                medicine = '*gives hug* ' + recommendation
+                api.update_status(status = medicine, in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
             except Exception:
                 pass
