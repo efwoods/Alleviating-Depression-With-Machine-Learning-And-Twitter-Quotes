@@ -241,7 +241,7 @@ quotesMasterDB = pd.Series(quotesDB["quotes"])
 
 # Query
 
-num_of_people_to_hug = 10
+num_of_people_to_hug = 100
 query = '#depressed'
 tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=num_of_people_to_hug)
 df = pd.DataFrame(tweets.data, columns=["id","text"])
