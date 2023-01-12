@@ -19,10 +19,24 @@ import sklearn
 import tweepy
 
 import nltk
+# Importing word tokenize
+from nltk import word_tokenize
+
+# Importing word stopwords
+
 nltk.download('wordnet')
 nltk.download('omw-1.4')
+# Downlaod the punkt for punctuation
+nltk.download("punkt")
+# Downlaod the stopwords
+nltk.download('stopwords')
+from nltk.corpus import stopwords
   
 from nltk.stem import WordNetLemmatizer
+
+# Importing word TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 
@@ -65,6 +79,23 @@ stopwordlist = ['a', 'about', 'above', 'after', 'again', 'ain', 'all', 'am', 'an
              'we', 'were', 'what', 'when', 'where','which','while', 'who', 'whom',
              'why', 'will', 'with', 'won', 'y', 'you', "youd","youll", "youre",
              "youve", 'your', 'yours', 'yourself', 'yourselves']
+
+
+def tokenize(text):
+    
+    # Making each letter as lowercase and removing non-alphabetical text
+    text = re.sub(r"[^a-zA-Z]", " ", text.lower())
+    
+    # Extracting each word in the text
+    tokens = word_tokenize(text)
+    
+    # Removing stopwords
+    words = [word for word in tokens if word not in stopwords.words("english")]
+    
+    # Lemmatize the words
+    text_lems = [WordNetLemmatizer().lemmatize(lem).strip() for lem in words]
+
+    return text_lems
 
 # Methods
 def load_models():
@@ -179,6 +210,15 @@ def get_depressed_tweets():
     depressed_tweets = requests.request("GET", url).json()
     return depressed_tweets
 
+def recommendQuote():
+    url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
+    fav_quote = requests.request("GET", url).json()
+    quotes = pd.Series(fav_quote["quotes"])
+    # Create the TfidfVectorizer
+    tfidf = TfidfVectorizer(tokenizer = tokenize)
+    review_tfidf = tfidf.fit_transform(quotes.values).toarray()
+    similar_quote = cosine_similarity(review_tfidf, review_tfidf)
+    
 # Configuration
 config = dotenv_values('./config/.env')
 auth = tweepy.OAuthHandler(config["API_KEY"], config["API_KEY_SECRET"])
@@ -191,13 +231,11 @@ client = tweepy.Client(bearer_token=bearer_token)
 vectoriser, LRmodel = load_models()
 
 # Query
-num_of_people_to_hug = 10
 
+num_of_people_to_hug = 10
 query = '#depressed'
 tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=num_of_people_to_hug)
-
 df = pd.DataFrame(tweets.data, columns=["id","text"])
-
 text_l = []
 for text in df["text"]:
     text_l.append(text)
