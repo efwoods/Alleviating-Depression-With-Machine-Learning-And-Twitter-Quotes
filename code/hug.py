@@ -210,6 +210,11 @@ def get_depressed_tweets():
     depressed_tweets = requests.request("GET", url).json()
     return depressed_tweets
 
+def get_liking_users():
+    url = "https://api.twitter.com/2/tweets/1537504318496047106/liking_users"
+    likes = requests.request("GET", url).json()
+    return likes
+
 def recommendQuotedResponse(quotesMasterDB, depressedTweet):
     quotesTEMP = quotesMasterDB.copy(deep=True)
     quotesTEMP.loc[-1] = depressedTweet
