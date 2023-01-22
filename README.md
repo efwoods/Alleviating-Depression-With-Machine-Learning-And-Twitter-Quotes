@@ -6,6 +6,6 @@
 </a>
 
 # EvanWoodsTwitter
- Evan Woods Twitter Bot
+ I post tweets of my favorite inspiring quotes to people who are #depressed. I want to give them a moment where they feel connected to someone who cares. 
 ## [Click for one of my favorite quotes! :)](https://fast-api-container.6p4po3ctm1a18.us-east-1.cs.amazonlightsail.com/quotes)
-
+## []()
