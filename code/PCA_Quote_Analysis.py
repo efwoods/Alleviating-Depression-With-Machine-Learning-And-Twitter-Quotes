@@ -96,8 +96,8 @@ stopwordlist = ['a', 'about', 'above', 'after', 'again', 'ain', 'all', 'am', 'an
              'we', 'were', 'what', 'when', 'where','which','while', 'who', 'whom',
              'why', 'will', 'with', 'won', 'y', 'you', "youd","youll", "youre",
              "youve", 'your', 'yours', 'yourself', 'yourselves']
-'''
-def preprocess(textdata):
+
+def preprocess_tweet(textdata):
     processedText = []
     
     # Create Lemmatizer and Stemmer.
@@ -110,7 +110,8 @@ def preprocess(textdata):
     sequencePattern   = r"(.)\1\1+"
     seqReplacePattern = r"\1\1"
     
-    for tweet in textdata:
+    for unformatted_tweet in textdata:
+        tweet = unformatted_tweet.text
         tweet = tweet.lower()
         
         # Replace all URls with 'URL'
@@ -137,7 +138,7 @@ def preprocess(textdata):
         processedText.append(tweetwords)
         
     return processedText
-'''
+
 ## Get quotes
 df = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
 df['Quote'] = df['Quote'].apply(lambda x: re.sub("[\“\”]", "", x))
@@ -246,3 +247,49 @@ model_sgd = pipeline_sgd.fit(X_train, Y_train)
 predict_sgd = model_sgd.predict(X_test)
 
 print(classification_report(predict_sgd, Y_test))
+
+## Get tweets
+import tweepy
+from dotenv import dotenv_values
+
+config = dotenv_values('./config/.env')
+# Authenticate with Twitter API
+auth = tweepy.OAuthHandler(config['API_KEY'], config['API_KEY_SECRET'])
+auth.set_access_token(config['ACCESS_TOKEN'], config['ACCESS_TOKEN_SECRET'])
+api = tweepy.API(auth)
+
+username="EvanWoods"
+
+# Get list of the authenticated user's favorite tweets
+favorites = api.get_favorites(screen_name=username,count=5)
+tweets = preprocess_tweet(favorites)
+# Print the text of each tweet
+for tweet in tweets:
+    print(tweet+'\n')
+
+## make a prediction
+classes = model_sgd.predict(tweets)
+print(classes)
+
+## identify the mode class that is liked by the user
+mode_class = pd.DataFrame(classes).value_counts().head(1)
+mode_class_name_index = mode_class.index.get_level_values(0)
+mode_class_name = mode_class_name_index[0]
+
+#create a category for my favorite quotes
+## load models
+def load_models():
+    '''
+    Replace '..path/' by the path of the saved models.
+    '''
+    
+    # Load the vectoriser.
+    file = open('./vectoriser-ngram-(1,2).pickle', 'rb')
+    vectoriser = pickle.load(file)
+    file.close()
+    # Load the LR Model.
+    file = open('./Sentiment-LR.pickle', 'rb')
+    LRmodel = pickle.load(file)
+    file.close()
+    
+    return vectoriser, LRmodel
