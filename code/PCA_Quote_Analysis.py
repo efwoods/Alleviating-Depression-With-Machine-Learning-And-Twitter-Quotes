@@ -19,6 +19,13 @@ import sklearn
 import tweepy
 from langdetect import detect
 
+
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import SGDClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
 import nltk
 # Importing word tokenize
 from nltk import word_tokenize
@@ -226,3 +233,16 @@ X_train_counts = count_vect.fit_transform(X_train)
 
 tfidf_transformer = TfidfTransformer()
 X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+
+# Create a model (SGDClassifier)
+pipeline_sgd = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf-svm', SGDClassifier(loss='hinge', penalty='l2',
+                          alpha=1e-3, random_state=42)),
+                        ])
+
+model_sgd = pipeline_sgd.fit(X_train, Y_train)
+
+predict_sgd = model_sgd.predict(X_test)
+
+print(classification_report(predict_sgd, Y_test))
