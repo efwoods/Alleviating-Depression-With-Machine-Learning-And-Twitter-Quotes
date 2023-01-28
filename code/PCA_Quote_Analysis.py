@@ -139,6 +139,47 @@ def preprocess_tweet(textdata):
         
     return processedText
 
+def preprocess(textdata):
+    processedText = []
+    
+    # Create Lemmatizer and Stemmer.
+    wordLemm = WordNetLemmatizer()
+    
+    # Defining regex patterns.
+    urlPattern        = r"((http://)[^ ]*|(https://)[^ ]*|( www\.)[^ ]*)"
+    userPattern       = '@[^\s]+'
+    alphaPattern      = "[^a-zA-Z0-9]"
+    sequencePattern   = r"(.)\1\1+"
+    seqReplacePattern = r"\1\1"
+    
+    for tweet in textdata:
+        tweet = tweet.lower()
+        
+        # Replace all URls with 'URL'
+        tweet = re.sub(urlPattern,' URL',tweet)
+        # Replace all emojis.
+        for emoji in emojis.keys():
+            tweet = tweet.replace(emoji, "EMOJI" + emojis[emoji])        
+        # Replace @USERNAME to 'USER'.
+        tweet = re.sub(userPattern,' USER', tweet)        
+        # Replace all non alphabets.
+        tweet = re.sub(alphaPattern, " ", tweet)
+        # Replace 3 or more consecutive letters by 2 letter.
+        tweet = re.sub(sequencePattern, seqReplacePattern, tweet)
+
+        tweetwords = ''
+        for word in tweet.split():
+            # Checking if the word is a stopword.
+            #if word not in stopwordlist:
+            if len(word)>1:
+                # Lemmatizing the word.
+                word = wordLemm.lemmatize(word)
+                tweetwords += (word+' ')
+            
+        processedText.append(tweetwords)
+        
+    return processedText
+
 ## Get quotes
 df = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
 df['Quote'] = df['Quote'].apply(lambda x: re.sub("[\“\”]", "", x))
@@ -258,6 +299,10 @@ auth = tweepy.OAuthHandler(config['API_KEY'], config['API_KEY_SECRET'])
 auth.set_access_token(config['ACCESS_TOKEN'], config['ACCESS_TOKEN_SECRET'])
 api = tweepy.API(auth)
 
+# for getting depressed tweets
+bearer_token = config["BEARER_TOKEN"]
+client = tweepy.Client(bearer_token=bearer_token)
+
 
 def get_users_favorite_tweets(username="EvanWoods"):
     # Get list of the authenticated user's favorite tweets
@@ -324,3 +369,90 @@ mode_class = identify_mode_class(user_classes)
 my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
 
 # pass into a cosine similarity matrix based on the mode class of the user's tweet
+def recommendQuotedResponse(quotesMasterDB, depressedTweet):
+    quotesTEMP = quotesMasterDB.copy(deep=True)
+    quotesTEMP.loc[-1] = depressedTweet
+    quotesTEMP.index += 1
+    quotesTEMP = quotesTEMP.sort_index()
+    # Create the TfidfVectorizer
+    tfidf = TfidfVectorizer(tokenizer = tokenize)
+    quotes_tfidf = tfidf.fit_transform(quotesTEMP.values).toarray()
+    similar_quote = cosine_similarity(quotes_tfidf, quotes_tfidf)
+    idx = 0
+    quote_series = pd.Series(similar_quote[idx]).sort_values(ascending = False)
+    top_10_indexes = list(quote_series.iloc[1 : 11].index)
+    return quotesTEMP.iloc[top_10_indexes[0]]
+
+# get depressed tweets
+num_of_people_to_hug = 10
+query = '#depressed'
+tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=num_of_people_to_hug)
+df = pd.DataFrame(tweets.data, columns=["id","text"])
+text_l = []
+for text in df["text"]:
+    text_l.append(text)
+
+
+# run a prediction
+def predict(vectoriser, model, text):
+    # Predict the sentiment
+    textdata = vectoriser.transform(preprocess(text))
+    sentiment = model.predict(textdata)
+    
+    # Make a list of text with sentiment.
+    data = []
+    for text, pred in zip(text, sentiment):
+        data.append((text,pred))
+        
+    # Convert the list into a Pandas DataFrame.
+    df = pd.DataFrame(data, columns = ['text','sentiment'])
+    df = df.replace([0,1], ["Negative","Positive"])
+    return df
+
+# make a prediction of the positive and negative sentiment of the depressed tweet
+preprocessed_df = predict(vectoriser, LRmodel, preprocess(text_l))
+# get the username from the tweetID
+def get_twitter_username_from_tweetID(tweetID):
+    twitter_data = api.get_status(tweetID)
+    username = twitter_data.user.screen_name
+    return username
+    
+# identify response & respond
+for text in range(0,preprocessed_df["text"].size):
+    if preprocessed_df["sentiment"][text] == "Negative":
+        f = open('hugs_given.txt',"r")
+        file_contents = f.read()
+        file_contents = file_contents.splitlines()
+        f.close()
+        if not tweetid in file_contents:
+            print("*give hug* to:{}".format(df["id"][text]))
+            f = open('hugs_given.txt','a')
+            f.write(tweetid + "\n")
+            f.close()
+            try:
+                tweetid = str(df["id"][text])
+                print(tweetid)
+                print(preprocessed_df["sentiment"][text])
+                print(preprocessed_df["text"][text])
+                print(df["text"][text])
+                print('\n')
+                username = get_twitter_username_from_tweetID(df["id"][text])
+                # identify which category is most liked by the user
+                tweets = get_users_favorite_tweets(username)
+
+                ## make a prediction
+                user_classes = identify_classes(tweets)
+
+                mode_class = identify_mode_class(user_classes)
+
+                ## create a subset of my favorite quotes based off of the category that is most liked by the user
+                my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
+                responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'], preprocessed_df["text"][text])
+                medicine = '*gives hug* ' + responseTweet
+                print(medicine)
+                # api.update_status(status = medicine, in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
+            except Exception:
+                pass
+# test_tweet = 'Focus on things that matter.'
+
+# responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'])
