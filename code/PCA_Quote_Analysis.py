@@ -258,23 +258,28 @@ auth = tweepy.OAuthHandler(config['API_KEY'], config['API_KEY_SECRET'])
 auth.set_access_token(config['ACCESS_TOKEN'], config['ACCESS_TOKEN_SECRET'])
 api = tweepy.API(auth)
 
-username="EvanWoods"
 
-# Get list of the authenticated user's favorite tweets
-favorites = api.get_favorites(screen_name=username,count=5)
-tweets = preprocess_tweet(favorites)
-# Print the text of each tweet
-for tweet in tweets:
-    print(tweet+'\n')
+def get_users_favorite_tweets(username="EvanWoods"):
+    # Get list of the authenticated user's favorite tweets
+    favorites = api.get_favorites(screen_name=username,count=20)
+    tweets = preprocess_tweet(favorites)
+    # Print the text of each tweet
+    for tweet in tweets:
+        print(tweet+'\n')
+    return tweets
 
 ## make a prediction
-classes = model_sgd.predict(tweets)
-print(classes)
+def identify_classes(tweets):
+    classes = model_sgd.predict(tweets)
+    print(classes)
+    return classes
 
 ## identify the mode class that is liked by the user
-mode_class = pd.DataFrame(classes).value_counts().head(1)
-mode_class_name_index = mode_class.index.get_level_values(0)
-mode_class_name = mode_class_name_index[0]
+def identify_mode_class(classes):
+    mode_class = pd.DataFrame(classes).value_counts().head(1)
+    mode_class_name_index = mode_class.index.get_level_values(0)
+    mode_class_name = mode_class_name_index[0]
+    return mode_class_name
 
 #create a category for my favorite quotes
 ## load models
@@ -293,3 +298,29 @@ def load_models():
     file.close()
     
     return vectoriser, LRmodel
+
+# Loading the models & getting quote list.
+# Creating a dataframe of my favorite quotes to suggest based on class
+vectoriser, LRmodel = load_models()
+
+quotes_url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
+quotesDB = requests.request("GET", quotes_url).json()
+quotesMasterDB = pd.Series(quotesDB["quotes"])
+classes = identify_classes(quotesMasterDB)
+favorite_quotes_classes = pd.DataFrame({'quote': quotesMasterDB,'category': classes})
+
+##
+
+
+# identify which category is most liked by the user
+tweets = get_users_favorite_tweets('lexfridman')
+
+## make a prediction
+user_classes = identify_classes(tweets)
+
+mode_class = identify_mode_class(user_classes)
+
+## create a subset of my favorite quotes based off of the category that is most liked by the user
+my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
+
+# pass into a cosine similarity matrix based on the mode class of the user's tweet
