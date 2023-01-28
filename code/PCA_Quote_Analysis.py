@@ -384,7 +384,7 @@ def recommendQuotedResponse(quotesMasterDB, depressedTweet):
     return quotesTEMP.iloc[top_10_indexes[0]]
 
 # get depressed tweets
-num_of_people_to_hug = 10
+num_of_people_to_hug = 100
 query = '#depressed'
 tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=num_of_people_to_hug)
 df = pd.DataFrame(tweets.data, columns=["id","text"])
@@ -418,7 +418,10 @@ def get_twitter_username_from_tweetID(tweetID):
     return username
     
 # identify response & respond
+from tqdm import tqdm
+pbar = tqdm(total=preprocessed_df["text"].size)
 for text in range(0,preprocessed_df["text"].size):
+    tweetid = str(df["id"][text])
     if preprocessed_df["sentiment"][text] == "Negative":
         f = open('hugs_given.txt',"r")
         file_contents = f.read()
@@ -450,9 +453,15 @@ for text in range(0,preprocessed_df["text"].size):
                 responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'], preprocessed_df["text"][text])
                 medicine = '*gives hug* ' + responseTweet
                 print(medicine)
-                # api.update_status(status = medicine, in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
+                api.update_status(status = medicine, in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
             except Exception:
                 pass
+        else:
+            print("tweetId in file contents")
+    else:
+        print("positive sentiment")
+    pbar.update(1)
+pbar.close()
 # test_tweet = 'Focus on things that matter.'
 
 # responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'])
