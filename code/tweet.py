@@ -29,24 +29,10 @@ nltk.download('wordnet')
 nltk.download('omw-1.4')
 from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
+import tweepy
+from dotenv import dotenv_values
 
-# Configuration
-config = dotenv_values('./config/.env')
-auth = tweepy.OAuthHandler(config["API_KEY"], config["API_KEY_SECRET"])
-auth.set_access_token(config["ACCESS_TOKEN"], config["ACCESS_TOKEN_SECRET"])
-api = tweepy.API(auth)
-bearer_token = config["BEARER_TOKEN"]
-client = tweepy.Client(bearer_token=bearer_token)
-
-# Defining dictionary containing all emojis with their meanings.
-emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
-          ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
-          ':-@': 'shocked', ':@': 'shocked',':-$': 'confused', ':\\': 'annoyed', 
-          ':#': 'mute', ':X': 'mute', ':^)': 'smile', ':-&': 'confused', '$_$': 'greedy',
-          '@@': 'eyeroll', ':-!': 'confused', ':-D': 'smile', ':-0': 'yell', 'O.o': 'confused',
-          '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
-          ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
-
+# Methods
 def preprocess_tweet(textdata):
     processedText = []
     
@@ -128,25 +114,13 @@ def preprocess(textdata):
         
     return processedText
 
-## Get quotes
-df = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
-df['Quote'] = df['Quote'].apply(lambda x: re.sub("[\“\”]", "", x))
-df['Other Tags'] = df['Other Tags'].apply(lambda x: re.sub("[\'\[\]]", "", x))
-
-# Detect Text Language
-langs = []
-for text in df['Quote']:
-    try:
-        lang = detect(text).language.code
-        langs.append(lang)
-    except:
-        lang = 'NaN'
-        langs.append(lang)
-df['lang'] = langs
-
+# get the username from the tweetID
+def get_twitter_username_from_tweetID(tweetID):
+    twitter_data = api.get_status(tweetID)
+    username = twitter_data.user.screen_name
+    return username
 
 def tokenize(text):
-    
     # Making each letter as lowercase and removing non-alphabetical text
     text = re.sub(r"[^a-zA-Z]", " ", text.lower())
     
@@ -166,6 +140,102 @@ def tokenize(text):
             tweetwords += (word+' ')
     return tweetwords
 
+def get_users_favorite_tweets(username="EvanWoods"):
+    # Get list of the authenticated user's favorite tweets
+    favorites = api.get_favorites(screen_name=username,count=20)
+    tweets = preprocess_tweet(favorites)
+    # Print the text of each tweet
+    for tweet in tweets:
+        print(tweet+'\n')
+    return tweets
+
+# Make a prediction
+def identify_classes(tweets):
+    classes = model_sgd.predict(tweets)
+    print(classes)
+    return classes
+
+# Identify the mode of the class that is liked by the user
+def identify_mode_class(classes):
+    mode_class = pd.DataFrame(classes).value_counts().head(1)
+    mode_class_name_index = mode_class.index.get_level_values(0)
+    mode_class_name = mode_class_name_index[0]
+    return mode_class_name
+
+# Create a category for my favorite quotes
+## Load models
+def load_models():
+    
+    # Load the vectoriser.
+    file = open('./models/vectoriser-ngram-(1,2).pickle', 'rb')
+    vectoriser = pickle.load(file)
+    file.close()
+    # Load the LR Model.
+    file = open('./models/Sentiment-LR.pickle', 'rb')
+    LRmodel = pickle.load(file)
+    file.close()
+    
+    return vectoriser, LRmodel
+
+# pass into a cosine similarity matrix based on the mode class of the user's tweet
+def recommendQuotedResponse(quotesMasterDB, depressedTweet):
+    quotesTEMP = quotesMasterDB.copy(deep=True)
+    quotesTEMP.loc[-1] = depressedTweet
+    quotesTEMP.index += 1
+    quotesTEMP = quotesTEMP.sort_index()
+    # Create the TfidfVectorizer
+    tfidf = TfidfVectorizer(tokenizer = tokenize)
+    quotes_tfidf = tfidf.fit_transform(quotesTEMP.values).toarray()
+    similar_quote = cosine_similarity(quotes_tfidf, quotes_tfidf)
+    idx = 0
+    quote_series = pd.Series(similar_quote[idx]).sort_values(ascending = False)
+    top_10_indexes = list(quote_series.iloc[1 : 11].index)
+    return quotesTEMP.iloc[top_10_indexes[0]]
+
+def drop_stop(input_tokens):
+    rempunc = re.sub(r'[^\w\s]','',input_tokens)
+    remstopword = " ".join([word for word in str(rempunc).split() if word not in stop_nltk])
+    return remstopword
+
+# run a prediction
+def predict(vectoriser, model, text):
+    # Predict the sentiment
+    textdata = vectoriser.transform(preprocess(text))
+    sentiment = model.predict(textdata)
+    
+    # Make a list of text with sentiment.
+    data = []
+    for text, pred in zip(text, sentiment):
+        data.append((text,pred))
+        
+    # Convert the list into a Pandas DataFrame.
+    df = pd.DataFrame(data, columns = ['text','sentiment'])
+    df = df.replace([0,1], ["Negative","Positive"])
+    return df
+
+# Configuration
+config = dotenv_values('./config/.env')
+auth = tweepy.OAuthHandler(config["API_KEY"], config["API_KEY_SECRET"])
+auth.set_access_token(config["ACCESS_TOKEN"], config["ACCESS_TOKEN_SECRET"])
+api = tweepy.API(auth)
+bearer_token = config["BEARER_TOKEN"]
+client = tweepy.Client(bearer_token=bearer_token)
+
+# Defining dictionary containing all emojis with their meanings.
+emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
+          ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
+          ':-@': 'shocked', ':@': 'shocked',':-$': 'confused', ':\\': 'annoyed', 
+          ':#': 'mute', ':X': 'mute', ':^)': 'smile', ':-&': 'confused', '$_$': 'greedy',
+          '@@': 'eyeroll', ':-!': 'confused', ':-D': 'smile', ':-0': 'yell', 'O.o': 'confused',
+          '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
+          ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
+
+## Get quotes
+df = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
+df['Quote'] = df['Quote'].apply(lambda x: re.sub("[\“\”]", "", x))
+df['Other Tags'] = df['Other Tags'].apply(lambda x: re.sub("[\'\[\]]", "", x))
+
+
 # Detect Text Language
 langs = []
 for text in df['Quote']:
@@ -179,7 +249,7 @@ df['lang'] = langs
 
 df['lang'].value_counts().head(10)
 
-# I will only use Eng Quote
+# Using English Quotes
 df_eng = df[df['lang']=='en']
 print(df_eng.shape)
 df_eng['Main Tag'].value_counts()
@@ -192,10 +262,7 @@ df_eng['CleanQuote'].sample(2)
 # remove stopwords and punctuation
 stop_nltk = stopwords.words("english")
 
-def drop_stop(input_tokens):
-    rempunc = re.sub(r'[^\w\s]','',input_tokens)
-    remstopword = " ".join([word for word in str(rempunc).split() if word not in stop_nltk])
-    return remstopword
+
 
 df_eng['CleanQuote'] = df_eng['CleanQuote'].apply(lambda x: drop_stop(x))
 df_eng['CleanQuote'].sample(2)
@@ -206,7 +273,6 @@ df_eng['CleanQuote'] = df_eng['CleanQuote'].apply(lambda x: tokenize(x))
 # drop empty rows
 df_eng.drop(df_eng[df_eng['CleanQuote']==""].index, inplace=True)
 
-###
 # specify feature and target
 X = df_eng['CleanQuote']
 Y = df_eng['Main Tag']
@@ -235,60 +301,16 @@ predict_sgd = model_sgd.predict(X_test)
 
 print(classification_report(predict_sgd, Y_test))
 
-## Get tweets
-import tweepy
-from dotenv import dotenv_values
-
+# Get tweets
 config = dotenv_values('./config/.env')
 # Authenticate with Twitter API
 auth = tweepy.OAuthHandler(config['API_KEY'], config['API_KEY_SECRET'])
 auth.set_access_token(config['ACCESS_TOKEN'], config['ACCESS_TOKEN_SECRET'])
 api = tweepy.API(auth)
 
-# for getting depressed tweets
+# Authentication used for getting depressed tweets
 bearer_token = config["BEARER_TOKEN"]
 client = tweepy.Client(bearer_token=bearer_token)
-
-
-def get_users_favorite_tweets(username="EvanWoods"):
-    # Get list of the authenticated user's favorite tweets
-    favorites = api.get_favorites(screen_name=username,count=20)
-    tweets = preprocess_tweet(favorites)
-    # Print the text of each tweet
-    for tweet in tweets:
-        print(tweet+'\n')
-    return tweets
-
-## make a prediction
-def identify_classes(tweets):
-    classes = model_sgd.predict(tweets)
-    print(classes)
-    return classes
-
-## identify the mode class that is liked by the user
-def identify_mode_class(classes):
-    mode_class = pd.DataFrame(classes).value_counts().head(1)
-    mode_class_name_index = mode_class.index.get_level_values(0)
-    mode_class_name = mode_class_name_index[0]
-    return mode_class_name
-
-#create a category for my favorite quotes
-## load models
-def load_models():
-    '''
-    Replace '..path/' by the path of the saved models.
-    '''
-    
-    # Load the vectoriser.
-    file = open('./models/vectoriser-ngram-(1,2).pickle', 'rb')
-    vectoriser = pickle.load(file)
-    file.close()
-    # Load the LR Model.
-    file = open('./models/Sentiment-LR.pickle', 'rb')
-    LRmodel = pickle.load(file)
-    file.close()
-    
-    return vectoriser, LRmodel
 
 # Loading the models & getting quote list.
 # Creating a dataframe of my favorite quotes to suggest based on class
@@ -300,35 +322,6 @@ quotesMasterDB = pd.Series(quotesDB["quotes"])
 classes = identify_classes(quotesMasterDB)
 favorite_quotes_classes = pd.DataFrame({'quote': quotesMasterDB,'category': classes})
 
-##
-
-
-# identify which category is most liked by the user
-tweets = get_users_favorite_tweets('lexfridman')
-
-## make a prediction
-user_classes = identify_classes(tweets)
-
-mode_class = identify_mode_class(user_classes)
-
-## create a subset of my favorite quotes based off of the category that is most liked by the user
-my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
-
-# pass into a cosine similarity matrix based on the mode class of the user's tweet
-def recommendQuotedResponse(quotesMasterDB, depressedTweet):
-    quotesTEMP = quotesMasterDB.copy(deep=True)
-    quotesTEMP.loc[-1] = depressedTweet
-    quotesTEMP.index += 1
-    quotesTEMP = quotesTEMP.sort_index()
-    # Create the TfidfVectorizer
-    tfidf = TfidfVectorizer(tokenizer = tokenize)
-    quotes_tfidf = tfidf.fit_transform(quotesTEMP.values).toarray()
-    similar_quote = cosine_similarity(quotes_tfidf, quotes_tfidf)
-    idx = 0
-    quote_series = pd.Series(similar_quote[idx]).sort_values(ascending = False)
-    top_10_indexes = list(quote_series.iloc[1 : 11].index)
-    return quotesTEMP.iloc[top_10_indexes[0]]
-
 # get depressed tweets
 num_of_people_to_hug = 100
 query = '#depressed'
@@ -338,33 +331,10 @@ text_l = []
 for text in df["text"]:
     text_l.append(text)
 
-
-# run a prediction
-def predict(vectoriser, model, text):
-    # Predict the sentiment
-    textdata = vectoriser.transform(preprocess(text))
-    sentiment = model.predict(textdata)
-    
-    # Make a list of text with sentiment.
-    data = []
-    for text, pred in zip(text, sentiment):
-        data.append((text,pred))
-        
-    # Convert the list into a Pandas DataFrame.
-    df = pd.DataFrame(data, columns = ['text','sentiment'])
-    df = df.replace([0,1], ["Negative","Positive"])
-    return df
-
 # make a prediction of the positive and negative sentiment of the depressed tweet
 preprocessed_df = predict(vectoriser, LRmodel, preprocess(text_l))
-# get the username from the tweetID
-def get_twitter_username_from_tweetID(tweetID):
-    twitter_data = api.get_status(tweetID)
-    username = twitter_data.user.screen_name
-    return username
-    
-# identify response & respond
 
+# identify response & respond
 pbar = tqdm(total=preprocessed_df["text"].size)
 for text in range(0,preprocessed_df["text"].size):
     tweetid = str(df["id"][text])
@@ -386,14 +356,15 @@ for text in range(0,preprocessed_df["text"].size):
                 print(df["text"][text])
                 print('\n')
                 username = get_twitter_username_from_tweetID(df["id"][text])
-                # identify which category is most liked by the user
+                
+                # Identify which category is most liked by the user
                 tweets = get_users_favorite_tweets(username)
 
-                ## make a prediction
+                # Make a prediction
                 user_classes = identify_classes(tweets)
                 mode_class = identify_mode_class(user_classes)
 
-                ## create a subset of my favorite quotes based off of the category that is most liked by the user
+                # Create a subset of my favorite quotes based off of the category that is most liked by the user
                 my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
                 responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'], preprocessed_df["text"][text])
                 medicine = '*gives hug* ' + responseTweet
