@@ -1,54 +1,34 @@
-# Configuration
-
+# Imports
 import base64
 import hashlib
 import os
 import re
-import json
 import requests
-import redis
-from requests.auth import AuthBase, HTTPBasicAuth
-from requests_oauthlib import OAuth2Session, TokenUpdated
-from flask import Flask, request, redirect, session, url_for, render_template
 from dotenv import dotenv_values
-import random
-import configparser
 import pickle
 import pandas as pd
-import sklearn
 import tweepy
 from langdetect import detect
-
-
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-
+from sklearn.metrics import classification_report
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfTransformer, CountVectorizer
 import nltk
 # Importing word tokenize
 from nltk import word_tokenize
 from nltk.corpus import wordnet
 # Importing word stopwords
-
-nltk.download('wordnet')
-nltk.download('omw-1.4')
-# Downlaod the punkt for punctuation
-nltk.download("punkt")
-# Downlaod the stopwords
 nltk.download('stopwords')
 from nltk.corpus import stopwords
-  
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 from nltk.stem import WordNetLemmatizer
-
-# Importing word TfidfVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics.pairwise import cosine_similarity
-
-from sklearn.feature_extraction.text import TfidfTransformer, CountVectorizer
-
+from tqdm import tqdm
 
 # Configuration
 config = dotenv_values('./config/.env')
@@ -58,18 +38,6 @@ api = tweepy.API(auth)
 bearer_token = config["BEARER_TOKEN"]
 client = tweepy.Client(bearer_token=bearer_token)
 
-# Now we can set the permissions you need for your bot by defining scopes. You can use the authentication mapping guide to determine what scopes you need based on your endpoints. 
-scopes = ["tweet.read", "users.read", "tweet.write", "offline.access"]
-
-# Since Twitter’s implementation of OAuth 2.0 is PKCE-compliant, you will need to set a code verifier. This is a secure random string. This code verifier is also used to create the code challenge.
-code_verifier = base64.urlsafe_b64encode(os.urandom(30)).decode("utf-8")
-code_verifier = re.sub("[^a-zA-Z0-9]+", "", code_verifier)
-
-# In addition to a code verifier, you will also need to pass a code challenge. The code challenge is a base64 encoded string of the SHA256 hash of the code verifier.
-code_challenge = hashlib.sha256(code_verifier.encode("utf-8")).digest()
-code_challenge = base64.urlsafe_b64encode(code_challenge).decode("utf-8")
-code_challenge = code_challenge.replace("=", "")
-
 # Defining dictionary containing all emojis with their meanings.
 emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
           ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
@@ -78,24 +46,6 @@ emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': '
           '@@': 'eyeroll', ':-!': 'confused', ':-D': 'smile', ':-0': 'yell', 'O.o': 'confused',
           '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
           ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
-
-## Defining set containing all stopwords in english.
-stopwordlist = ['a', 'about', 'above', 'after', 'again', 'ain', 'all', 'am', 'an',
-             'and','any','are', 'as', 'at', 'be', 'because', 'been', 'before',
-             'being', 'below', 'between','both', 'by', 'can', 'd', 'did', 'do',
-             'does', 'doing', 'down', 'during', 'each','few', 'for', 'from', 
-             'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here',
-             'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in',
-             'into','is', 'it', 'its', 'itself', 'just', 'll', 'm', 'ma',
-             'me', 'more', 'most','my', 'myself', 'now', 'o', 'of', 'on', 'once',
-             'only', 'or', 'other', 'our', 'ours','ourselves', 'out', 'own', 're',
-             's', 'same', 'she', "shes", 'should', "shouldve",'so', 'some', 'such',
-             't', 'than', 'that', "thatll", 'the', 'their', 'theirs', 'them',
-             'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 
-             'through', 'to', 'too','under', 'until', 'up', 've', 'very', 'was',
-             'we', 'were', 'what', 'when', 'where','which','while', 'who', 'whom',
-             'why', 'will', 'with', 'won', 'y', 'you', "youd","youll", "youre",
-             "youve", 'your', 'yours', 'yourself', 'yourselves']
 
 def preprocess_tweet(textdata):
     processedText = []
@@ -129,7 +79,6 @@ def preprocess_tweet(textdata):
         tweetwords = ''
         for word in tweet.split():
             # Checking if the word is a stopword.
-            #if word not in stopwordlist:
             if len(word)>1:
                 # Lemmatizing the word.
                 word = wordLemm.lemmatize(word)
@@ -170,7 +119,6 @@ def preprocess(textdata):
         tweetwords = ''
         for word in tweet.split():
             # Checking if the word is a stopword.
-            #if word not in stopwordlist:
             if len(word)>1:
                 # Lemmatizing the word.
                 word = wordLemm.lemmatize(word)
@@ -217,8 +165,6 @@ def tokenize(text):
         if len(word)>1:
             tweetwords += (word+' ')
     return tweetwords
-
-
 
 # Detect Text Language
 langs = []
@@ -418,7 +364,7 @@ def get_twitter_username_from_tweetID(tweetID):
     return username
     
 # identify response & respond
-from tqdm import tqdm
+
 pbar = tqdm(total=preprocessed_df["text"].size)
 for text in range(0,preprocessed_df["text"].size):
     tweetid = str(df["id"][text])
@@ -445,7 +391,6 @@ for text in range(0,preprocessed_df["text"].size):
 
                 ## make a prediction
                 user_classes = identify_classes(tweets)
-
                 mode_class = identify_mode_class(user_classes)
 
                 ## create a subset of my favorite quotes based off of the category that is most liked by the user
