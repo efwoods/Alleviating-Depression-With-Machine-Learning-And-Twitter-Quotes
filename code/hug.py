@@ -21,7 +21,7 @@ import tweepy
 import nltk
 # Importing word tokenize
 from nltk import word_tokenize
-
+from nltk.corpus import wordnet
 # Importing word stopwords
 
 nltk.download('wordnet')
@@ -275,3 +275,33 @@ for text in range(0,testdf["text"].size):
             except Exception:
                 pass
             
+### K-Means Recommendation system
+## Scrape a User's Likes
+
+## Load Data
+qdf = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
+qdf.sample(5)
+qdf['Quote']
+
+## Preprocessing
+# Lower case
+qdf['CleanQuote'] = qdf['Quote'].apply(lambda x: x.lower())
+
+# remove_stopwords & punctuation
+
+def rem_stop(input_tokens):
+    rempunc = re.sub(r'[^\w\s]','',input_tokens)
+    remstopword = " ".join([word for word in str(rempunc).split() if word not in stop_nltk])
+    return remstopword
+
+stop_nltk = stopwords.words("english")
+qdf['CleanQuote'].apply(lambda x: rem_stop(x))
+
+# Lemetize
+lemmatizer = WordNetLemmatizer()
+wordnet_map = {"N":wordnet.NOUN, "V":wordnet.VERB, "J":wordnet.ADJ, "R":wordnet.ADV}
+def lemmatize_words(text):
+    pos_tagged_text = nltk.pos_tag(text.split())
+    return " ".join([lemmatizer.lemmatize(word, wordnet_map.get(pos[0], wordnet.NOUN)) for word, pos in pos_tagged_text])
+
+qdf['CleanQuote']= qdf['CleanQuote'].apply(lambda x: lemmatize_words(x))

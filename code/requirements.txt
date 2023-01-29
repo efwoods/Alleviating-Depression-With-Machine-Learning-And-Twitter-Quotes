@@ -7,3 +7,4 @@ pandas
 nltk
 scikit-learn
 tweepy
+langdetect
