@@ -36,9 +36,36 @@ likes = twitter$Total.Likes[twitter$Tweet.Type=="Reply"]
 ```{r}
 time = twitter$Tweet.Posted.Time[twitter$Tweet.Type=="Reply"]
 ```
-## Barplot
 ```{r}
-barplot(table(time),likes,col=c("purple","green"),xlab="Date",ylab="Tweets Sent/Liked",las=2, cex.names = 0.3, main = "Tweet Replies Sent Versus Tweet Replies Liked")
-legend("topright", legend = c("Tweets Replied", "Replies Liked"), fill = c("purple", "green"))
+# Gathering Tweets Sent into a DataFrame
+mydata <- data.frame(time = time, likes = likes)
+mydata$time <- as.Date(mydata$time)
+time_tmp <- unique(mydata$time)
+mydata$time <- as.character(mydata$time)
+result <- sapply(time_tmp, function(x){
+  tmp <- mydata[mydata$time ==x,]
+  return(sum(tmp$likes))
+})
+mynewdata <- data.frame(time = time_tmp, likes = result)
+mynewdata$time <- as.Date(mynewdata$time)
+# Converting tweets sent into a dataframe to display on graph
 
+table_time_df = data.frame(table(time))
+table_time_df$time <- as.Date(table_time_df$time)
+time_tmp2 <- unique(table_time_df$time)
+result2 <- sapply(time_tmp2, function(x){
+     tmp <- table_time_df[table_time_df$time ==x,]
+     return(sum(tmp$Freq))
+})
+tweets_sent_df <- data.frame(time = time_tmp2, tweets_sent = result2)
+tweets_sent_df$time <- as.Date(tweets_sent_df$time)
+
+# Plotting
+
+plot(mynewdata$time, mynewdata$likes, col="red", type = "o", xlab="Date", ylab="Count",ylim=c(0,110),
+     main = "Tweet Replies Sent to #depressed VS Tweet Replies Liked")
+
+lines(tweets_sent_df$time, tweets_sent_df$tweets_sent, col="blue", type = "o", 
+     main = "Tweet Replies Sent")
+legend("topleft", legend = c("Tweets Replied", "Tweets Liked"), fill = c("blue", "red"))
 ```
