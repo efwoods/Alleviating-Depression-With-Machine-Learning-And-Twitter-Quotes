@@ -462,6 +462,3 @@ for text in range(0,preprocessed_df["text"].size):
         print("positive sentiment")
     pbar.update(1)
 pbar.close()
-# test_tweet = 'Focus on things that matter.'
-
-# responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'])
