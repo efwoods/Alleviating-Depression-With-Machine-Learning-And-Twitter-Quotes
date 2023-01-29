@@ -162,8 +162,7 @@ def identify_mode_class(classes):
     mode_class_name = mode_class_name_index[0]
     return mode_class_name
 
-# Create a category for my favorite quotes
-## Load models
+# Load models
 def load_models():
     
     # Load the vectoriser.
@@ -230,11 +229,10 @@ emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': '
           '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
           ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
 
-## Get quotes
+# Get quotes
 df = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
 df['Quote'] = df['Quote'].apply(lambda x: re.sub("[\“\”]", "", x))
 df['Other Tags'] = df['Other Tags'].apply(lambda x: re.sub("[\'\[\]]", "", x))
-
 
 # Detect Text Language
 langs = []
@@ -261,9 +259,6 @@ df_eng['CleanQuote'].sample(2)
 
 # remove stopwords and punctuation
 stop_nltk = stopwords.words("english")
-
-
-
 df_eng['CleanQuote'] = df_eng['CleanQuote'].apply(lambda x: drop_stop(x))
 df_eng['CleanQuote'].sample(2)
 
@@ -315,7 +310,6 @@ client = tweepy.Client(bearer_token=bearer_token)
 # Loading the models & getting quote list.
 # Creating a dataframe of my favorite quotes to suggest based on class
 vectoriser, LRmodel = load_models()
-
 quotes_url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
 quotesDB = requests.request("GET", quotes_url).json()
 quotesMasterDB = pd.Series(quotesDB["quotes"])
