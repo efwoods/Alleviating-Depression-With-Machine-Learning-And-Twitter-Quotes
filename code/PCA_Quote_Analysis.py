@@ -334,11 +334,11 @@ def load_models():
     '''
     
     # Load the vectoriser.
-    file = open('./vectoriser-ngram-(1,2).pickle', 'rb')
+    file = open('./models/vectoriser-ngram-(1,2).pickle', 'rb')
     vectoriser = pickle.load(file)
     file.close()
     # Load the LR Model.
-    file = open('./Sentiment-LR.pickle', 'rb')
+    file = open('./models/Sentiment-LR.pickle', 'rb')
     LRmodel = pickle.load(file)
     file.close()
     
