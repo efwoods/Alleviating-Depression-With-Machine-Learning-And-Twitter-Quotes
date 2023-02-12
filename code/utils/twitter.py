@@ -44,8 +44,6 @@ def get_tweets_by_hashtag(client, hashtag='#depressed',number_of_tweets_to_get=1
     return df,text_l
 
 def get_my_tweets(api):
-    timeline = api.user_timeline()
-    preprocessed_tweets = preprocess.preprocess_tweet(timeline)
-    return preprocessed_tweets
-
-
+    timeline = api.user_timeline(count = 1000, max_id = None, tweet_mode = 'extended')
+    tweets = preprocess.tweet_quote(timeline)
+    return tweets

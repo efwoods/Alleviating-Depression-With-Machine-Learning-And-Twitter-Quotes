@@ -20,6 +20,46 @@ emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': '
           '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
           ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
 
+def tweet_quote(raw_tweets):
+    urlPattern        = r"((http://)[^ ]*|(https://)[^ ]*|( www\.)[^ ]*)"
+    userPattern       = '@[^\s]+'
+    hyphenNamePattern = r"-\s.*"
+    hugPattern = r"(\s\*gives hug\*\s)"
+    quotePattern = r"(\“|\"|\')"
+    
+    processed_tweets = []
+    for raw_tweet in raw_tweets:
+        processed_tweet = re.sub(urlPattern,'',raw_tweet.full_text)
+        
+        # print('REMOVED: URL')
+        # print(processed_tweet)
+        
+        processed_tweet = re.sub(userPattern,'',processed_tweet)
+        
+        # print('REMOVED: REMOVED USER ')
+        # print(processed_tweet)
+        
+        processed_tweet = re.sub(hyphenNamePattern,'',processed_tweet)
+        
+        # print('REMOVED: HYPHEN')
+        # print(processed_tweet)
+        
+        processed_tweet = re.sub(hugPattern,'', processed_tweet)
+        
+        # print('REMOVED: hug')
+        # print(processed_tweet)
+        
+        processed_tweet = processed_tweet.strip()
+        processed_tweet = re.sub(quotePattern,'',processed_tweet)
+        processed_tweets.append(processed_tweet)
+        unique_tweets = list(set(processed_tweets))
+        filtered_empty_unique_tweets = [x for x in unique_tweets if x and str(x).strip()]
+        processed_tweets = [x for x in filtered_empty_unique_tweets]
+        # processed_tweets = [x.lower() for x in filtered_empty_unique_tweets]
+        
+    return processed_tweets
+        
+
 def preprocess_tweet(textdata):
     processedText = []
     
