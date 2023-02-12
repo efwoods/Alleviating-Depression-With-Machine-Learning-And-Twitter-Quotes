@@ -31,6 +31,7 @@ from nltk.stem import WordNetLemmatizer
 from tqdm import tqdm
 import tweepy
 from dotenv import dotenv_values
+import joblib
 
 # Methods
 
@@ -307,6 +308,9 @@ model_sgd = pipeline_sgd.fit(X_train, Y_train)
 predict_sgd = model_sgd.predict(X_test)
 
 print(classification_report(predict_sgd, Y_test))
+
+filename = 'model_sgd.joblib'
+joblib.dump(model_sgd, filename)
 
 # Get tweets
 config = dotenv_values('./config/.env')
