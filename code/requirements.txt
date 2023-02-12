@@ -9,3 +9,4 @@ scikit-learn
 tweepy
 langdetect
 autocorrect
+torch
