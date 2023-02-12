@@ -1,24 +1,14 @@
 # Imports
-
 import requests
-
 import pickle
 import pandas as pd
 from langdetect import detect
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.linear_model import SGDClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import classification_report
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfTransformer, CountVectorizer
+
 
 
 from tqdm import tqdm
-import tweepy
-from dotenv import dotenv_values
 import joblib
 from utils import twitter,preprocess
 
@@ -28,8 +18,6 @@ from utils import twitter,preprocess
 
 # encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
 # decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
-
-
 
 # Classify tweets based on category (love, etc)
 def identify_classes(tweets):
