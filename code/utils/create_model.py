@@ -242,8 +242,8 @@ print(decode(m.generate(context, max_new_tokens=2000)[0].tolist()))
 
 # import pickle
 # # Save the model to a binary file
-# with open("bigram_model.pkl", "wb") as f:
-#     pickle.dump(bigram_model, f)
+# with open("bigram_model.pickle", "wb") as f:
+#     pickle.dump(m, f)
 
 # # Load the model from a binary file
 # with open("bigram_model.pkl", "rb") as f:
