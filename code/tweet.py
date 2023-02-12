@@ -1,13 +1,9 @@
 # Imports
-import base64
-import hashlib
-import os
-import re
+
 import requests
-from dotenv import dotenv_values
+
 import pickle
 import pandas as pd
-import tweepy
 from langdetect import detect
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
@@ -18,145 +14,24 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfTransformer, CountVectorizer
-import nltk
-# Importing word tokenize
-from nltk import word_tokenize
-from nltk.corpus import wordnet
-# Importing word stopwords
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-nltk.download('wordnet')
-nltk.download('omw-1.4')
-from nltk.stem import WordNetLemmatizer
+
+
 from tqdm import tqdm
 import tweepy
 from dotenv import dotenv_values
+import joblib
+from utils import twitter,preprocess
 
 # Methods
 
 # create a mapping from characters to integers (used to decode(evan_woods_tweet_generator_bigram_model.generate(context, max_new_tokens=2000)[0].tolist()))) )
 
-encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+# encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
+# decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
 
 
-def preprocess_tweet(textdata):
-    processedText = []
-    
-    # Create Lemmatizer and Stemmer.
-    wordLemm = WordNetLemmatizer()
-    
-    # Defining regex patterns.
-    urlPattern        = r"((http://)[^ ]*|(https://)[^ ]*|( www\.)[^ ]*)"
-    userPattern       = '@[^\s]+'
-    alphaPattern      = "[^a-zA-Z0-9]"
-    sequencePattern   = r"(.)\1\1+"
-    seqReplacePattern = r"\1\1"
-    
-    for unformatted_tweet in textdata:
-        tweet = unformatted_tweet.text
-        tweet = tweet.lower()
-        
-        # Replace all URls with 'URL'
-        tweet = re.sub(urlPattern,' URL',tweet)
-        # Replace all emojis.
-        for emoji in emojis.keys():
-            tweet = tweet.replace(emoji, "EMOJI" + emojis[emoji])        
-        # Replace @USERNAME to 'USER'.
-        tweet = re.sub(userPattern,' USER', tweet)        
-        # Replace all non alphabets.
-        tweet = re.sub(alphaPattern, " ", tweet)
-        # Replace 3 or more consecutive letters by 2 letter.
-        tweet = re.sub(sequencePattern, seqReplacePattern, tweet)
 
-        tweetwords = ''
-        for word in tweet.split():
-            # Checking if the word is a stopword.
-            if len(word)>1:
-                # Lemmatizing the word.
-                word = wordLemm.lemmatize(word)
-                tweetwords += (word+' ')
-            
-        processedText.append(tweetwords)
-        
-    return processedText
-
-def preprocess(textdata):
-    processedText = []
-    
-    # Create Lemmatizer and Stemmer.
-    wordLemm = WordNetLemmatizer()
-    
-    # Defining regex patterns.
-    urlPattern        = r"((http://)[^ ]*|(https://)[^ ]*|( www\.)[^ ]*)"
-    userPattern       = '@[^\s]+'
-    alphaPattern      = "[^a-zA-Z0-9]"
-    sequencePattern   = r"(.)\1\1+"
-    seqReplacePattern = r"\1\1"
-    
-    for tweet in textdata:
-        tweet = tweet.lower()
-        
-        # Replace all URls with 'URL'
-        tweet = re.sub(urlPattern,' URL',tweet)
-        # Replace all emojis.
-        for emoji in emojis.keys():
-            tweet = tweet.replace(emoji, "EMOJI" + emojis[emoji])        
-        # Replace @USERNAME to 'USER'.
-        tweet = re.sub(userPattern,' USER', tweet)        
-        # Replace all non alphabets.
-        tweet = re.sub(alphaPattern, " ", tweet)
-        # Replace 3 or more consecutive letters by 2 letter.
-        tweet = re.sub(sequencePattern, seqReplacePattern, tweet)
-
-        tweetwords = ''
-        for word in tweet.split():
-            # Checking if the word is a stopword.
-            if len(word)>1:
-                # Lemmatizing the word.
-                word = wordLemm.lemmatize(word)
-                tweetwords += (word+' ')
-            
-        processedText.append(tweetwords)
-        
-    return processedText
-
-# get the username from the tweetID
-def get_twitter_username_from_tweetID(tweetID):
-    twitter_data = api.get_status(tweetID)
-    username = twitter_data.user.screen_name
-    return username
-
-def tokenize(text):
-    # Making each letter as lowercase and removing non-alphabetical text
-    text = re.sub(r"[^a-zA-Z]", " ", text.lower())
-    
-    # Extracting each word in the text
-    tokens = word_tokenize(text)
-    
-    # Removing stopwords
-    words = [word for word in tokens if word not in stopwords.words("english")]
-    
-    # Lemmatize the words
-    text_lems = [WordNetLemmatizer().lemmatize(lem).strip() for lem in words]
-    
-    tweetwords = ''
-    for word in text_lems:
-        # concatonate into a string
-        if len(word)>1:
-            tweetwords += (word+' ')
-    return tweetwords
-
-def get_users_favorite_tweets(username="EvanWoods"):
-    # Get list of the authenticated user's favorite tweets
-    favorites = api.get_favorites(screen_name=username,count=20)
-    tweets = preprocess_tweet(favorites)
-    # Print the text of each tweet
-    for tweet in tweets:
-        print(tweet+'\n')
-    return tweets
-
-# Make a prediction
+# Classify tweets based on category (love, etc)
 def identify_classes(tweets):
     classes = model_sgd.predict(tweets)
     print(classes)
@@ -180,8 +55,9 @@ def load_models():
     file = open('./models/Sentiment-LR.pickle', 'rb')
     LRmodel = pickle.load(file)
     file.close()
+    model_sgd = joblib.load('./models/model_sgd.joblib')
     
-    return vectoriser, LRmodel
+    return vectoriser, LRmodel, model_sgd
 
 # pass into a cosine similarity matrix based on the mode class of the user's tweet
 def recommendQuotedResponse(quotesMasterDB, depressedTweet):
@@ -198,15 +74,11 @@ def recommendQuotedResponse(quotesMasterDB, depressedTweet):
     top_10_indexes = list(quote_series.iloc[1 : 11].index)
     return quotesTEMP.iloc[top_10_indexes[0]]
 
-def drop_stop(input_tokens):
-    rempunc = re.sub(r'[^\w\s]','',input_tokens)
-    remstopword = " ".join([word for word in str(rempunc).split() if word not in stop_nltk])
-    return remstopword
 
-# run a prediction
+# Predict the Sentiment of a tweet (Positive/Negative)
 def predict(vectoriser, model, text):
     # Predict the sentiment
-    textdata = vectoriser.transform(preprocess(text))
+    textdata = vectoriser.transform(preprocess.preprocess(text))
     sentiment = model.predict(textdata)
     
     # Make a list of text with sentiment.
@@ -219,126 +91,24 @@ def predict(vectoriser, model, text):
     df = df.replace([0,1], ["Negative","Positive"])
     return df
 
-def get_my_tweets():
-    timeline = api.user_timeline()
-    preprocessed_tweets = preprocess_tweet(timeline)
-    
-
-# Configuration
-config = dotenv_values('./config/.env')
-auth = tweepy.OAuthHandler(config["API_KEY"], config["API_KEY_SECRET"])
-auth.set_access_token(config["ACCESS_TOKEN"], config["ACCESS_TOKEN_SECRET"])
-api = tweepy.API(auth)
-bearer_token = config["BEARER_TOKEN"]
-client = tweepy.Client(bearer_token=bearer_token)
-
-# Defining dictionary containing all emojis with their meanings.
-emojis = {':)': 'smile', ':-)': 'smile', ';d': 'wink', ':-E': 'vampire', ':(': 'sad', 
-          ':-(': 'sad', ':-<': 'sad', ':P': 'raspberry', ':O': 'surprised',
-          ':-@': 'shocked', ':@': 'shocked',':-$': 'confused', ':\\': 'annoyed', 
-          ':#': 'mute', ':X': 'mute', ':^)': 'smile', ':-&': 'confused', '$_$': 'greedy',
-          '@@': 'eyeroll', ':-!': 'confused', ':-D': 'smile', ':-0': 'yell', 'O.o': 'confused',
-          '<(-_-)>': 'robot', 'd[-_-]b': 'dj', ":'-)": 'sadsmile', ';)': 'wink', 
-          ';-)': 'wink', 'O:-)': 'angel','O*-)': 'angel','(:-D': 'gossip', '=^.^=': 'cat'}
-
-# Get quotes
-df = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
-df['Quote'] = df['Quote'].apply(lambda x: re.sub("[\“\”]", "", x))
-df['Other Tags'] = df['Other Tags'].apply(lambda x: re.sub("[\'\[\]]", "", x))
-
-# Detect Text Language
-langs = []
-for text in df['Quote']:
-    try:
-        lang = detect(text)
-        langs.append(lang)
-    except:
-        lang = 'NaN'
-        langs.append(lang)
-df['lang'] = langs
-
-df['lang'].value_counts().head(10)
-
-# Using English Quotes
-df_eng = df[df['lang']=='en']
-print(df_eng.shape)
-df_eng['Main Tag'].value_counts()
-
-# Preprocessing
-# lower case
-df_eng['CleanQuote'] = df_eng['Quote'].apply(lambda x: x.lower())
-df_eng['CleanQuote'].sample(2)
-
-# remove stopwords and punctuation
-stop_nltk = stopwords.words("english")
-df_eng['CleanQuote'] = df_eng['CleanQuote'].apply(lambda x: drop_stop(x))
-df_eng['CleanQuote'].sample(2)
-
-# Tokenize
-df_eng['CleanQuote'] = df_eng['CleanQuote'].apply(lambda x: tokenize(x))
-
-# drop empty rows
-df_eng.drop(df_eng[df_eng['CleanQuote']==""].index, inplace=True)
-
-# specify feature and target
-X = df_eng['CleanQuote']
-Y = df_eng['Main Tag']
-
-# Split into train and test sets
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=48, stratify=Y)
-print(f"X_train : {X_train.shape}\nX_test : {X_test.shape}")
-
-# Extract features
-count_vect = CountVectorizer()
-X_train_counts = count_vect.fit_transform(X_train)
-
-tfidf_transformer = TfidfTransformer()
-X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-
-# Create a model (SGDClassifier)
-pipeline_sgd = Pipeline([('vect', CountVectorizer()),
-                         ('tfidf', TfidfTransformer()),
-                         ('clf-svm', SGDClassifier(loss='hinge', penalty='l2',
-                          alpha=1e-3, random_state=42)),
-                        ])
-
-model_sgd = pipeline_sgd.fit(X_train, Y_train)
-
-predict_sgd = model_sgd.predict(X_test)
-
-print(classification_report(predict_sgd, Y_test))
+# create_model.py to create model_sgd
 
 # Get tweets
-config = dotenv_values('./config/.env')
-# Authenticate with Twitter API
-auth = tweepy.OAuthHandler(config['API_KEY'], config['API_KEY_SECRET'])
-auth.set_access_token(config['ACCESS_TOKEN'], config['ACCESS_TOKEN_SECRET'])
-api = tweepy.API(auth)
-
-# Authentication used for getting depressed tweets
-bearer_token = config["BEARER_TOKEN"]
-client = tweepy.Client(bearer_token=bearer_token)
+api, client = twitter.config()
 
 # Loading the models & getting quote list.
 # Creating a dataframe of my favorite quotes to suggest based on class
-vectoriser, LRmodel = load_models()
+vectoriser, LRmodel, model_sgd = load_models()
 quotes_url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
 quotesDB = requests.request("GET", quotes_url).json()
 quotesMasterDB = pd.Series(quotesDB["quotes"])
 classes = identify_classes(quotesMasterDB)
 favorite_quotes_classes = pd.DataFrame({'quote': quotesMasterDB,'category': classes})
 
-# get depressed tweets
-num_of_people_to_hug = 100
-query = '#depressed'
-tweets = client.search_recent_tweets(query=query, tweet_fields=['author_id', 'created_at'], max_results=num_of_people_to_hug)
-df = pd.DataFrame(tweets.data, columns=["id","text"])
-text_l = []
-for text in df["text"]:
-    text_l.append(text)
+df, text_l = twitter.get_tweets_by_hashtag(client)
 
 # make a prediction of the positive and negative sentiment of the depressed tweet
-preprocessed_df = predict(vectoriser, LRmodel, preprocess(text_l))
+preprocessed_df = predict(vectoriser, LRmodel, preprocess.preprocess(text_l))
 
 # identify response & respond
 pbar = tqdm(total=preprocessed_df["text"].size)
@@ -361,10 +131,10 @@ for text in range(0,preprocessed_df["text"].size):
                 print(preprocessed_df["text"][text])
                 print(df["text"][text])
                 print('\n')
-                username = get_twitter_username_from_tweetID(df["id"][text])
+                username = twitter.get_twitter_username_from_tweetID(api,df["id"][text])
                 
                 # Identify which category is most liked by the user
-                tweets = get_users_favorite_tweets(username)
+                tweets = twitter.get_users_favorite_tweets(api, username)
 
                 # Make a prediction
                 user_classes = identify_classes(tweets)
