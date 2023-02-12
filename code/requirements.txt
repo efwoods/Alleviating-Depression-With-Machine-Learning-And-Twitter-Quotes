@@ -8,3 +8,5 @@ nltk
 scikit-learn
 tweepy
 langdetect
+autocorrect
+torch
