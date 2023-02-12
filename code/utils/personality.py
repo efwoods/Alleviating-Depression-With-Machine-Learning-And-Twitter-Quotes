@@ -1,17 +1,30 @@
 import joblib
 import torch
+import pickle
+from utils import postprocess
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-text = joblib.load('./models/personality_newline_corpus.joblib')
-personality = joblib.load('./models/personality_newline.joblib')
+def generate_personality_list():
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    text = joblib.load('./models/personality_newlines_corpus.joblib')
 
-chars = sorted(list(set(text)))
-vocab_size = len(chars)
-# create a mapping from characters to integers
-stoi = { ch:i for i,ch in enumerate(chars) }
-itos = { i:ch for i,ch in enumerate(chars) }
-encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+    # Load the model from a binary file
+    with open("./models/personality_newlines_model.pkl", "rb") as f:
+        personality = pickle.load(f)
 
-context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(personality.generate(context, max_new_tokens=2000)[0].tolist()))
+    chars = sorted(list(set(text)))
+    # create a mapping from characters to integers
+    itos = { i:ch for i,ch in enumerate(chars) }
+    decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+
+    context = torch.zeros((1, 1), dtype=torch.long, device=device)
+    generated_personality = decode(personality.generate(context, max_new_tokens=2000)[0].tolist())
+        
+    generated_personality_list = postprocess.correct_spelling(generated_personality,'newlines')
+
+    generated_personality_list = [x.strip() for x in generated_personality_list]
+    generated_personality_list = list(set(generated_personality_list))
+    for i in range(0, len(generated_personality_list)-1):
+        if generated_personality_list[i] == '':
+            del generated_personality_list[i]
+
+    return generated_personality_list

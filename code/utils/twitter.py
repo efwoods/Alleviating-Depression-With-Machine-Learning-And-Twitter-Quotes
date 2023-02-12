@@ -2,7 +2,7 @@
 import tweepy
 import pandas as pd
 from dotenv import dotenv_values
-from utils import preprocess
+import preprocess
 
 # Configuration
 def config():

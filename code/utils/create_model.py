@@ -38,7 +38,7 @@ api, config = twitter.config()
 text = twitter.get_my_tweets(api)
 temp = ""
 for t in text:
-    temp = temp + " " + t
+    temp = temp + "\n" + t
 text = temp
 
 # here are all the unique characters that occur in this text
@@ -229,6 +229,25 @@ for iter in range(max_iters):
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 print(decode(m.generate(context, max_new_tokens=2000)[0].tolist()))
+
+# Save model with pickle
+# import pickle
+# with open('personality_newlines_model.pkl', "wb") as f:
+#     pickle.dump(m,f)
+
+# joblib.dump(text,'personality_newlines_corpus.joblib')
+
+
+######
+
+# import pickle
+# # Save the model to a binary file
+# with open("bigram_model.pkl", "wb") as f:
+#     pickle.dump(bigram_model, f)
+
+# # Load the model from a binary file
+# with open("bigram_model.pkl", "rb") as f:
+#     bigram_model = pickle.load(f)
 
 # TRAINING A MODEL 
 # Defining dictionary containing all emojis with their meanings.
