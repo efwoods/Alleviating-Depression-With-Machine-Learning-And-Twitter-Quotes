@@ -36,8 +36,8 @@ from dotenv import dotenv_values
 
 # create a mapping from characters to integers (used to decode(evan_woods_tweet_generator_bigram_model.generate(context, max_new_tokens=2000)[0].tolist()))) )
 
-encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+# encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
+# decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
 
 
 def preprocess_tweet(textdata):
