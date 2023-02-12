@@ -2,6 +2,7 @@ import joblib
 import torch
 import pickle
 from utils import postprocess
+import pandas as pd
 
 def generate_personality_list():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -26,5 +27,5 @@ def generate_personality_list():
     for i in range(0, len(generated_personality_list)-1):
         if generated_personality_list[i] == '':
             del generated_personality_list[i]
-
-    return generated_personality_list
+    generated_personality_list_Series = pd.Series(generated_personality_list)
+    return generated_personality_list_Series

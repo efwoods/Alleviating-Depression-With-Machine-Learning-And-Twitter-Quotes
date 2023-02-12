@@ -5,19 +5,13 @@ import pandas as pd
 from langdetect import detect
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
-
+from utils import personality
 
 from tqdm import tqdm
 import joblib
 from utils import twitter,preprocess
 
 # Methods
-
-# create a mapping from characters to integers (used to decode(evan_woods_tweet_generator_bigram_model.generate(context, max_new_tokens=2000)[0].tolist()))) )
-
-# encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-# decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
 
 # Classify tweets based on category (love, etc)
 def identify_classes(tweets):
@@ -79,19 +73,33 @@ def predict(vectoriser, model, text):
     df = df.replace([0,1], ["Negative","Positive"])
     return df
 
-# create_model.py to create model_sgd
+# Get favorite quotes
+# Used to feed into tweet class dataframe 
+def getFavoriteQuotes():
+    quotes_url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
+    quotesDB = requests.request("GET", quotes_url).json()
+    quotesMasterDB = pd.Series(quotesDB["quotes"])
+    return quotesMasterDB
+
+def tweet_class_df(db_Series_of_tweets_or_strings):
+    classes = identify_classes(db_Series_of_tweets_or_strings)
+    tweet_class_df = pd.DataFrame({'quote': db_Series_of_tweets_or_strings, 'category': classes})
+    return tweet_class_df
+
+def create_subset(series_of_classes_and_text_either_favorite_or_personality, mode_class):
+    return series_of_classes_and_text_either_favorite_or_personality[series_of_classes_and_text_either_favorite_or_personality['category']==mode_class]
+    
 
 # Get tweets
 api, client = twitter.config()
+vectoriser, LRmodel, model_sgd = load_models()
 
 # Loading the models & getting quote list.
 # Creating a dataframe of my favorite quotes to suggest based on class
-vectoriser, LRmodel, model_sgd = load_models()
-quotes_url = "https://efwoods.github.io/EvanWoodsFavoriteQuotes/quotesTwitterDB.json"
-quotesDB = requests.request("GET", quotes_url).json()
-quotesMasterDB = pd.Series(quotesDB["quotes"])
-classes = identify_classes(quotesMasterDB)
-favorite_quotes_classes = pd.DataFrame({'quote': quotesMasterDB,'category': classes})
+
+favorite_quotes_classes = tweet_class_df(db_Series_of_tweets_or_strings = getFavoriteQuotes())
+personality_classes = tweet_class_df(db_Series_of_tweets_or_strings=personality.generate_personality_list())
+
 
 df, text_l = twitter.get_tweets_by_hashtag(client)
 
@@ -131,8 +139,9 @@ for text in range(0,preprocessed_df["text"].size):
                 # Generate a quote based off of the class the user would most like. 
 
                 # Create a subset of my favorite quotes based off of the category that is most liked by the user
-                my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
-                responseTweet = recommendQuotedResponse(my_favorite_quotes_subset['quote'], preprocessed_df["text"][text])
+                
+                quotes_subset = create_subset(personality_classes, mode_class)
+                responseTweet = recommendQuotedResponse(quotes_subset['quote'], preprocessed_df["text"][text])
                 medicine = '*gives hug* ' + responseTweet
                 print(medicine)
                 api.update_status(status = medicine, in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
