@@ -33,6 +33,13 @@ import tweepy
 from dotenv import dotenv_values
 
 # Methods
+
+# create a mapping from characters to integers (used to decode(evan_woods_tweet_generator_bigram_model.generate(context, max_new_tokens=2000)[0].tolist()))) )
+
+encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
+decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+
+
 def preprocess_tweet(textdata):
     processedText = []
     
@@ -212,6 +219,11 @@ def predict(vectoriser, model, text):
     df = df.replace([0,1], ["Negative","Positive"])
     return df
 
+def get_my_tweets():
+    timeline = api.user_timeline()
+    preprocessed_tweets = preprocess_tweet(timeline)
+    
+
 # Configuration
 config = dotenv_values('./config/.env')
 auth = tweepy.OAuthHandler(config["API_KEY"], config["API_KEY_SECRET"])
@@ -357,6 +369,8 @@ for text in range(0,preprocessed_df["text"].size):
                 # Make a prediction
                 user_classes = identify_classes(tweets)
                 mode_class = identify_mode_class(user_classes)
+
+                # Generate a quote based off of the class the user would most like. 
 
                 # Create a subset of my favorite quotes based off of the category that is most liked by the user
                 my_favorite_quotes_subset = favorite_quotes_classes[favorite_quotes_classes['category']==mode_class]
