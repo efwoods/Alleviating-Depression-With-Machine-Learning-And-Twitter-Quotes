@@ -66,7 +66,7 @@ def recommendQuotedResponse(quotesMasterDB, depressedTweet):
     quotesTEMP.index += 1
     quotesTEMP = quotesTEMP.sort_index()
     # Create the TfidfVectorizer
-    tfidf = TfidfVectorizer(tokenizer = tokenize)
+    tfidf = TfidfVectorizer(tokenizer = preprocess.tokenize)
     quotes_tfidf = tfidf.fit_transform(quotesTEMP.values).toarray()
     similar_quote = cosine_similarity(quotes_tfidf, quotes_tfidf)
     idx = 0

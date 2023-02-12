@@ -47,5 +47,3 @@ def get_my_tweets(api):
     timeline = api.user_timeline()
     preprocessed_tweets = preprocess.preprocess_tweet(timeline)
     return preprocessed_tweets
-
-
