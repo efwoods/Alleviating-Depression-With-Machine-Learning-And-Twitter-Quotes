@@ -59,9 +59,12 @@ There is an outlier of a tweet that is liked just before November. This was a tw
 - Plot the effect of the generated Tweets on likes
 - Create generative models for different classes such as death, happiness, inspiration, love, poetry, romance, science, success, time, & truth
 - Plot the effect of the SGD Classifier on the replied/liked ratio of tweets.
-- Incorporate tweet translation to reach out to non-english speaking users of twitter and tweet replies in their native tongue.
+
 - Use a LLM such as Bloom to generate responses.
 - Incorporate an ensemble of virtues that I embody to respond in ways that match my virtues when appropriate.
 - Reply using a larger corpus, such as the [Goodreads-books dataset on kaggle](https://www.kaggle.com/datasets/jealousleopard/goodreadsbooks) to send quotes that the user may enjoy that I may not but are none-the-less appropriate to be sent by myself so as to ease their depression for a moment.  
+
+### New Features
+- Incorporate tweet translation to reach out to non-english speaking users of twitter and tweet replies in their native tongue.
 
 ## [Click for one of my favorite quotes! :)](https://fast-api-container.6p4po3ctm1a18.us-east-1.cs.amazonlightsail.com/quotes)
