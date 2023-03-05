@@ -10,3 +10,8 @@ tweepy
 langdetect
 autocorrect
 torch
+transformers
+SentencePiece
+translate
+gradio
+deep-translator

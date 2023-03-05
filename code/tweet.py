@@ -5,7 +5,10 @@ import pandas as pd
 from langdetect import detect
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from utils import personality
+from utils import personality, detect_language
+from translate import Translator
+
+from deep_translator import GoogleTranslator
 
 from tqdm import tqdm
 import joblib
@@ -77,6 +80,34 @@ def getFavoriteQuotes():
     quotesDB = requests.request("GET", quotes_url).json()
     quotesMasterDB = pd.Series(quotesDB["quotes"])
     return quotesMasterDB
+
+def getAllQuotes():
+    allQuotes = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
+    return allQuotes
+    
+def detectAndTranslateToEnglish(sentence):
+    original_language = detect_language.inference(sentence)
+    if original_language != "English":
+        english_translation = GoogleTranslator(source='auto', target='en').translate(sentence)
+    else:
+        english_translation = sentence
+    return original_language, english_translation
+
+
+def translateAllQuotesDBToEnglish():
+    allQuotes = pd.read_csv('./input/quotes-from-goodread/all_quotes.csv')
+    for item in range (0, len(allQuotes)):
+        quote = allQuotes["Quote"][item]
+        original_language, english_translation = detectAndTranslateToEnglish(quote)
+    if original_language != "English":
+        print("item: ", item)
+        print("english translation: ", english_translation)
+        allQuotes["Quote"][item] = english_translation
+    return allQuotes
+
+def translateToOriginalLanguage(original_language, english_sentence):
+    translation = GoogleTranslator(source='auto', target=original_language).translate(english_sentence)
+    return translation
 
 def tweet_class_df(db_Series_of_tweets_or_strings):
     classes = identify_classes(db_Series_of_tweets_or_strings)
@@ -325,15 +356,19 @@ generated_personality = decode(m.generate(context, max_new_tokens=2000)[0].tolis
 api, client = twitter.config()
 vectoriser, LRmodel, model_sgd = load_models()
 
+# Get All Quotes
+allQuotes = getAllQuotes()
+
 # Loading the models & getting quote list.
 # Creating a dataframe of my favorite quotes to suggest based on class
 
 favorite_quotes_classes = tweet_class_df(db_Series_of_tweets_or_strings = getFavoriteQuotes())
 personality_classes = tweet_class_df(db_Series_of_tweets_or_strings=personality.generate_personality_list(text,generated_personality))
+all_quotes_classes = tweet_class_df(db_Series_of_tweets_or_strings=allQuotes["Quote"])
 
 
 df, text_l = twitter.get_tweets_by_hashtag(client)
-
+original_language, text_l = detectAndTranslateToEnglish(text_l)
 # make a prediction of the positive and negative sentiment of the depressed tweet
 preprocessed_df = predict(vectoriser, LRmodel, preprocess.preprocess(text_l))
 
@@ -371,9 +406,13 @@ for text in range(0,preprocessed_df["text"].size):
 
                 # Create a subset of my favorite quotes based off of the category that is most liked by the user
                 
-                quotes_subset = create_subset(personality_classes, mode_class)
+                quotes_subset = create_subset(favorite_quotes_classes, mode_class)
                 responseTweet = recommendQuotedResponse(quotes_subset['quote'], preprocessed_df["text"][text])
-                medicine = '*gives hug* ' + responseTweet
+                
+                # Tranlate back to the original language of the original tweet
+                translatedReponseTweet = GoogleTranslator(source='auto', target=original_language).translate(responseTweet)
+                    
+                medicine = '*gives hug* ' + translatedReponseTweet
                 print(medicine)
                 api.update_status(status = medicine, in_reply_to_status_id = tweetid , auto_populate_reply_metadata=True)
             except Exception:
