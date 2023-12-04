@@ -66,5 +66,3 @@ There is an outlier of a tweet that is liked just before November. This was a tw
 
 ### New Features
 - Incorporate tweet translation to reach out to non-english speaking users of twitter and tweet replies in their native tongue.
-
-## [Click for one of my favorite quotes! :)](https://fast-api-container.6p4po3ctm1a18.us-east-1.cs.amazonlightsail.com/quotes)
