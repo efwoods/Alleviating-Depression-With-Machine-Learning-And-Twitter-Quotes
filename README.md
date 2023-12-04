@@ -5,7 +5,8 @@
   />
 </a>
 
-# EvanWoodsTwitter
+#  Alleviating Depression With  Machine Learning And Twitter Quotes
+
 
  ### Purpose 
  I post tweets of my favorite inspiring quotes to people who are #depressed. I want to give them a moment where they feel connected to someone who cares. I hope they feel a moment of escape from their depression. Because this is my personal twitter account, I have chosen to share quotes that I find valuable. These quotes are a reflection of myself and my personal values, and I hope that sharing appropriately the wisdom of a quote that has aided me in my life will in turn, through the correct response to the right person in need, shine light into their dark world - if only for a moment.
